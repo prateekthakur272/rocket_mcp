@@ -1,56 +1,86 @@
 import 'package:flutter/widgets.dart';
+import 'package:material_ui/material_ui.dart' show Tooltip;
 import 'package:rocket_mcp/components/layout.dart';
 import 'package:rocket_mcp/components/modifiers.dart';
 import 'package:rocket_mcp/components/text.dart';
 import 'package:rocket_mcp/theme/icons.dart';
 import 'package:rocket_mcp/theme/theme.dart';
 
-/// Text button with optional icon and primary/danger styling.
+/// Text button with optional icon. Styles: filled (default), [primary] accent fill, [outlined] transparent with a
+/// border; [danger] recolours any of them. [leading] replaces [icon] with an arbitrary widget.
 class Btn extends StatefulWidget {
   const Btn({
     super.key,
     required this.label,
     required this.onClick,
     this.primary = false,
+    this.outlined = false,
     this.enabled = true,
     this.danger = false,
     this.icon,
+    this.leading,
+    this.height = CONTROL_H,
+    this.fontSize,
   });
 
   final String label;
   final VoidCallback onClick;
   final bool primary;
+  final bool outlined;
   final bool enabled;
   final bool danger;
   final IconData? icon;
+  final Widget? leading;
+  final double height;
+  final double? fontSize;
 
   @override
   State<Btn> createState() => _BtnState();
 }
 
 class _BtnState extends State<Btn> {
+  static const Color _onAccent = Color(0xFFFFFFFF);
+  static const Color _clear = Color(0x00000000);
+
   bool _hov = false;
   bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
     final p = context.pal;
-    final enabled = widget.enabled, primary = widget.primary;
-    final base = primary ? p.accent : p.hover;
-    final bg = !enabled
-        ? base.withValues(alpha: 0.4)
-        : _hov && primary
-        ? Color.lerp(base, const Color(0xFFFFFFFF), 0.18)!
-        : _hov
-        ? p.selected
-        : base;
-    final fg = primary
-        ? const Color(0xFF000000)
-        : (widget.danger ? p.err : p.text);
-    final c = enabled ? fg : fg.withValues(alpha: 0.5);
-    final radius = BorderRadius.circular(5);
+    final enabled = widget.enabled;
+    final hov = _hov && enabled;
+    final tone = widget.danger ? p.err : p.accent;
+
+    Color bg;
+    Color fg;
+    Color? borderColor;
+    if (widget.primary) {
+      bg = hov ? tone.withValues(alpha: 0.85) : tone;
+      fg = _onAccent;
+    } else if (widget.outlined) {
+      bg = hov
+          ? (widget.danger ? p.err.withValues(alpha: 0.12) : p.hover)
+          : _clear;
+      fg = widget.danger ? p.err : p.text;
+      borderColor = hov
+          ? (widget.danger ? p.err : p.accent.withValues(alpha: 0.55))
+          : p.border;
+    } else {
+      bg = hov ? p.hover : p.field;
+      fg = widget.danger ? p.err : p.text;
+      borderColor = p.border;
+    }
+    if (!enabled) {
+      bg = bg.withValues(alpha: bg.a * 0.5);
+      fg = fg.withValues(alpha: 0.5);
+    }
+    final fontSize =
+        widget.fontSize ??
+        (widget.height <= 24 ? 11.5 : (widget.height <= 28 ? 12.0 : 12.5));
+    final radius = BorderRadius.circular(6);
     return MouseRegion(
-      cursor: SystemMouseCursors.click,
+      cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.forbidden,
       onEnter: (_) => setState(() => _hov = true),
       onExit: (_) => setState(() => _hov = false),
       child: GestureDetector(
@@ -60,38 +90,40 @@ class _BtnState extends State<Btn> {
         onTapCancel: () => setState(() => _pressed = false),
         onTap: enabled ? widget.onClick : null,
         child: AnimatedScale(
-          scale: _pressed && enabled ? 0.96 : 1,
+          scale: _pressed && enabled ? 0.97 : 1,
           duration: const Duration(milliseconds: 80),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 100),
-            height: CONTROL_H,
+            height: widget.height,
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(color: bg, borderRadius: radius),
-            // Border is painted over the content so it doesn't change the layout.
-            foregroundDecoration: !primary
-                ? BoxDecoration(
+            // The border is painted over the content so it doesn't change the layout.
+            foregroundDecoration: borderColor == null
+                ? null
+                : BoxDecoration(
                     borderRadius: radius,
-                    border: Border.all(
-                      color: _hov && enabled
-                          ? p.muted.withValues(alpha: 0.6)
-                          : p.border,
-                      width: 1,
-                    ),
-                  )
-                : null,
+                    border: Border.all(color: borderColor, width: 1),
+                  ),
             child: Center(
               widthFactor: 1,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 spacing: 6,
                 children: [
-                  if (widget.icon != null) Ico(widget.icon!, tint: c, size: 15),
+                  if (widget.leading != null)
+                    widget.leading!
+                  else if (widget.icon != null)
+                    Ico(
+                      widget.icon!,
+                      tint: fg,
+                      size: widget.height <= 24 ? 13 : 14,
+                    ),
                   if (widget.label.isNotEmpty)
                     T(
                       widget.label,
-                      color: c,
-                      size: 13,
-                      weight: primary ? FontWeight.w600 : null,
+                      color: fg,
+                      size: fontSize,
+                      weight: FontWeight.w500,
                     ),
                 ],
               ),
@@ -111,37 +143,49 @@ class IconBtn extends StatelessWidget {
     required this.onClick,
     this.color,
     this.size = 16,
+    this.boxSize = 24,
+    this.active = false,
+    this.tooltip,
   });
 
   final IconData icon;
   final VoidCallback onClick;
   final Color? color;
   final num size;
+  final num boxSize;
+
+  /// Highlights the button with the accent colour (a toggled-on state).
+  final bool active;
+  final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
     final p = context.pal;
-    return Clickable(
+    final button = Clickable(
       onClick: onClick,
       cursor: SystemMouseCursors.click,
-      borderRadius: BorderRadius.circular(5),
+      borderRadius: BorderRadius.circular(6),
       child: HoverBuilder(
         builder: (ctx, hov) => Container(
-          width: 26,
-          height: 26,
+          width: boxSize.toDouble(),
+          height: boxSize.toDouble(),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: hov ? p.hover : const Color(0x00000000),
-            borderRadius: BorderRadius.circular(5),
+            color: active
+                ? p.accent.withValues(alpha: 0.12)
+                : (hov ? p.hover : const Color(0x00000000)),
+            borderRadius: BorderRadius.circular(6),
           ),
           child: Ico(
             icon,
-            tint: hov ? p.text : (color ?? p.muted),
+            tint: color ?? (active ? p.accent : (hov ? p.text : p.muted)),
             size: size.toDouble(),
           ),
         ),
       ),
     );
+    final hint = tooltip;
+    return hint == null ? button : Tooltip(message: hint, child: button);
   }
 }
 

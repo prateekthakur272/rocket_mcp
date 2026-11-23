@@ -1,6 +1,5 @@
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
-import 'package:material_ui/material_ui.dart' show Material;
 import 'package:rocket_mcp/app/title_menu_state.dart';
 import 'package:rocket_mcp/components/modifiers.dart';
 import 'package:rocket_mcp/components/overlay.dart';
@@ -145,22 +144,36 @@ class _MenuPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.pal;
-    return Material(
-      color: p.panel,
-      elevation: 12,
-      shadowColor: const Color(0xFF000000),
-      borderRadius: BorderRadius.circular(8),
-      clipBehavior: Clip.antiAlias,
+    return Container(
+      decoration: BoxDecoration(
+        color: p.panel,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF000000).withValues(alpha: 0.38),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+          BoxShadow(
+            color: const Color(0xFF000000).withValues(alpha: 0.12),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
       child: _PanelBox(
         tm: tm,
         child: Container(
           width: 350,
-          // Borders are painted over the content so they take no layout space.
+          // The border is painted over the content so it takes no layout space.
           foregroundDecoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: p.border, width: 1),
+            border: Border.all(
+              color: p.border.withValues(alpha: 0.9),
+              width: 1,
+            ),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 4),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -183,9 +196,9 @@ class _MenuPanel extends StatelessWidget {
         case MenuSeparator():
           out.add(
             Container(
-              margin: const EdgeInsets.symmetric(vertical: 3),
+              margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
               height: 1,
-              color: p.border,
+              color: p.border.withValues(alpha: 0.6),
             ),
           );
         case SubMenuSpec():
@@ -261,10 +274,12 @@ class _Item extends StatelessWidget {
           : null,
       builder: (ctx, hov) => Container(
         height: 28,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        color: hov && e.enabled
-            ? p.accent.withValues(alpha: 0.14)
-            : const Color(0x00000000),
+        margin: const EdgeInsets.symmetric(vertical: 1),
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          color: hov && e.enabled ? p.hover : const Color(0x00000000),
+          borderRadius: BorderRadius.circular(5),
+        ),
         child: Row(
           spacing: 8,
           children: [
@@ -281,15 +296,25 @@ class _Item extends StatelessWidget {
               child: T(
                 e.label,
                 color: e.enabled ? p.text : p.muted.withValues(alpha: 0.6),
+                size: 12.5,
                 maxLines: 1,
               ),
             ),
             if (e.shortcut != null)
-              T(
-                e.shortcut!.label(false),
-                color: p.muted,
-                size: 11,
-                maxLines: 1,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                decoration: BoxDecoration(
+                  color: p.field,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: T(
+                  e.shortcut!.label(false),
+                  color: p.muted,
+                  size: 10,
+                  mono: true,
+                  lineHeight: 1.2,
+                  maxLines: 1,
+                ),
               ),
           ],
         ),

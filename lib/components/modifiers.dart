@@ -287,3 +287,27 @@ Widget overlayScrollbarTheme(Widget child) => ScrollbarTheme(
   ),
   child: child,
 );
+
+/// Paints a top border over [child]'s box.
+class DrawTopBorder extends StatelessWidget {
+  const DrawTopBorder({
+    super.key,
+    required this.color,
+    required this.child,
+    this.width = 1.0,
+  });
+
+  final Color color;
+  final Widget child;
+  final double width;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      border: Border(
+        top: BorderSide(color: color, width: width),
+      ),
+    ),
+    child: child,
+  );
+}

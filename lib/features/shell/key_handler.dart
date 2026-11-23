@@ -24,6 +24,14 @@ bool handleKey(AppState state, KeyEvent event) {
     state.togglePalette();
     return true;
   }
+  if (key == LogicalKeyboardKey.keyN) {
+    state.modal = const ModalServerConfig();
+    return true;
+  }
+  if (key == LogicalKeyboardKey.keyR && !shift) {
+    state.activeSession?.connect();
+    return true;
+  }
   if (key == LogicalKeyboardKey.keyB) {
     state.sidebarVisible = !state.sidebarVisible;
     return true;

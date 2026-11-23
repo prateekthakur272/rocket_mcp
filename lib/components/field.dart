@@ -803,7 +803,11 @@ class AreaField extends StatefulWidget {
     this.minHeight = 0,
     this.expands = false,
     this.maxLines,
+    this.focusRequester,
   });
+
+  /// A focus node the caller can use to focus the editor.
+  final FocusNode? focusRequester;
 
   final String value;
   final ValueChanged<String> onChange;
@@ -865,6 +869,7 @@ class _AreaFieldState extends State<AreaField> {
       ),
       child: TextField(
         controller: _c,
+        focusNode: widget.focusRequester,
         style: style,
         cursorColor: p.accent,
         cursorRadius: Radius.zero,

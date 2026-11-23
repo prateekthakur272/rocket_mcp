@@ -100,6 +100,21 @@ class _PaletteState extends State<Palette> {
         run: go(run),
       ),
     );
+    act('Add MCP server…', () => state.modal = const ModalServerConfig(), '⌘N');
+    act(
+      'Import / export MCP servers…',
+      () => state.modal = const ModalImportExport(),
+      '⌘⇧I',
+    );
+    if (state.activeSession != null) {
+      act(
+        'Connect / reconnect active server',
+        () => state.activeSession?.connect(),
+        '⌘R',
+      );
+      act('Disconnect active server', () => state.activeSession?.disconnect());
+      act('Ping active server', () => state.activeSession?.ping());
+    }
     act('Preferences', () => state.modal = const ModalSettings(), '⌘,');
     act(
       'Toggle sidebar',

@@ -52,6 +52,26 @@ void main() {
       expect(AppStore.loadSettings().verticalLayout, isFalse);
     });
 
+    test('panel sizes are saved and restored', () {
+      AppState()
+        ..sidebarWidth = 0.3
+        ..listPaneWidth = 300
+        ..splitFraction = 0.35
+        ..persist();
+      final restored = AppState();
+      expect(restored.sidebarWidth, 0.3);
+      expect(restored.listPaneWidth, 300);
+      expect(restored.splitFraction, 0.35);
+    });
+
+    test('panel sizes stay within their limits', () {
+      final state = AppState()
+        ..listPaneWidth = 10000
+        ..splitFraction = 5;
+      expect(state.listPaneWidth, AppState.maxListPaneWidth);
+      expect(state.splitFraction, AppState.maxSplitFraction);
+    });
+
     test('palette toggles', () {
       final state = AppState()..togglePalette();
       expect(state.modal, isA<ModalPalette>());

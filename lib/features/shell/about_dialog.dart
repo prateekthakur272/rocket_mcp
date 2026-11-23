@@ -32,7 +32,7 @@ class AboutDialog extends StatelessWidget {
             child: Column(
               spacing: 6,
               children: [
-                Ico(Ic.logo, tint: p.accent, size: 56),
+                Ico(Ic.logo, withBg: true, size: 56),
                 const T(AppConfig.NAME, size: 22, weight: FontWeight.w700),
                 T('Version ${AppMetadata.version}', color: p.muted, size: 12),
                 T('by ${AppConfig.VENDOR}', color: p.muted, size: 12),

@@ -42,6 +42,7 @@ class T extends StatelessWidget {
     this.overflow = TextOverflow.clip,
     this.softWrap,
     this.textAlign,
+    this.lineHeight,
   });
 
   final String text;
@@ -53,36 +54,40 @@ class T extends StatelessWidget {
   final TextOverflow overflow;
   final bool? softWrap;
   final TextAlign? textAlign;
+  final double? lineHeight;
 
   @override
-  Widget build(BuildContext context) => Text(
-    text,
-    maxLines: maxLines,
-    overflow: overflow,
-    softWrap: softWrap,
-    textAlign: textAlign,
-    // The ambient body style (16sp, line height 24sp, letterSpacing 0.5sp, centred line height) is only
-    // overridden in size, so every `T` has a fixed 24sp line box and 0.5sp tracking.
-    strutStyle: StrutStyle(
-      fontSize: size.toDouble(),
-      height: bodyLineHeight / size.toDouble(),
-      forceStrutHeight: true,
-      leadingDistribution: TextLeadingDistribution.even,
-    ),
-    textHeightBehavior: const TextHeightBehavior(
-      leadingDistribution: TextLeadingDistribution.even,
-    ),
-    style: TextStyle(
-      color: color ?? context.pal.text,
-      fontSize: size.toDouble(),
-      height: bodyLineHeight / size.toDouble(),
-      letterSpacing: bodyLetterSpacing,
-      fontWeight: weight,
-      fontFamily: mono ? monoFamily : null,
-      fontFamilyFallback: mono ? monoFallback : null,
-      decoration: TextDecoration.none,
-    ),
-  );
+  Widget build(BuildContext context) {
+    final effectiveHeight = lineHeight ?? (bodyLineHeight / size.toDouble());
+    return Text(
+      text,
+      maxLines: maxLines,
+      overflow: overflow,
+      softWrap: softWrap,
+      textAlign: textAlign,
+      // The ambient body style (16sp, line height 24sp, letterSpacing 0.5sp, centred line height) is only
+      // overridden in size, so every `T` has a fixed 24sp line box and 0.5sp tracking, unless [lineHeight] is specified.
+      strutStyle: StrutStyle(
+        fontSize: size.toDouble(),
+        height: effectiveHeight,
+        forceStrutHeight: true,
+        leadingDistribution: TextLeadingDistribution.even,
+      ),
+      textHeightBehavior: const TextHeightBehavior(
+        leadingDistribution: TextLeadingDistribution.even,
+      ),
+      style: TextStyle(
+        color: color ?? context.pal.text,
+        fontSize: size.toDouble(),
+        height: effectiveHeight,
+        letterSpacing: bodyLetterSpacing,
+        fontWeight: weight,
+        fontFamily: mono ? monoFamily : null,
+        fontFamilyFallback: mono ? monoFallback : null,
+        decoration: TextDecoration.none,
+      ),
+    );
+  }
 }
 
 class SectionLabel extends StatelessWidget {

@@ -2,12 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:rocket_mcp/app/app_state.dart';
-import 'package:rocket_mcp/components/drag_devices.dart';
+import 'package:rocket_mcp/components/layout.dart';
 import 'package:rocket_mcp/components/overlay.dart';
 import 'package:rocket_mcp/components/text.dart';
 import 'package:rocket_mcp/features/shell/modals.dart';
 import 'package:rocket_mcp/features/shell/status_bar.dart';
 import 'package:rocket_mcp/features/shell/title_bar.dart';
+import 'package:rocket_mcp/features/shell/top_bar.dart';
 import 'package:rocket_mcp/features/shell/window_chrome.dart';
 import 'package:rocket_mcp/features/workspace/workspace_view.dart';
 import 'package:rocket_mcp/theme/theme.dart';
@@ -96,6 +97,7 @@ class _RocketAppState extends State<RocketApp> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       TitleBar(state: state, chrome: widget.chrome),
+                      TopBar(state: state),
                       Expanded(child: _Body(state: state)),
                       StatusBar(state: state),
                     ],
@@ -123,7 +125,6 @@ class _Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.pal;
     return LayoutBuilder(
       builder: (context, constraints) {
         final totalWidth = constraints.maxWidth;
@@ -134,16 +135,12 @@ class _Body extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (state.sidebarVisible) ...[
-              SizedBox(width: sidebarDp, child: const SidebarView()),
-              MouseRegion(
-                cursor: SystemMouseCursors.resizeLeftRight,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  supportedDevices: kDragDevices,
-                  onHorizontalDragUpdate: (d) =>
-                      state.sidebarWidth += d.delta.dx / totalWidth,
-                  child: Container(width: 5, color: p.border),
-                ),
+              SizedBox(
+                width: sidebarDp,
+                child: SidebarView(state: state),
+              ),
+              PanelDivider(
+                onDrag: (dx) => state.sidebarWidth += dx / totalWidth,
               ),
             ],
             Expanded(child: WorkspaceView(state: state)),

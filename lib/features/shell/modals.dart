@@ -3,6 +3,8 @@ import 'package:rocket_mcp/app/app_state.dart';
 import 'package:rocket_mcp/app/modal.dart';
 import 'package:rocket_mcp/features/developer/developer_dialog.dart';
 import 'package:rocket_mcp/features/preferences/preferences.dart';
+import 'package:rocket_mcp/features/servers/import_export_dialog.dart';
+import 'package:rocket_mcp/features/servers/server_dialog.dart';
 import 'package:rocket_mcp/features/shell/about_dialog.dart';
 import 'package:rocket_mcp/features/shell/palette.dart';
 import 'package:rocket_mcp/features/shell/update_dialog.dart';
@@ -28,5 +30,10 @@ class Modals extends StatelessWidget {
       state: state,
       version: modal.version,
     ),
+    ModalServerConfig() => ServerConfigDialog(
+      state: state,
+      server: modal.server,
+    ),
+    ModalImportExport() => ImportExportDialog(state: state),
   };
 }

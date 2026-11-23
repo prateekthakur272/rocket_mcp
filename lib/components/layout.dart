@@ -93,6 +93,10 @@ class Tabs extends StatelessWidget {
 
 /// Centered dialog panel.
 class ModalBox extends StatelessWidget {
+  /// Space kept between a dialog and the window edges, and the tallest a dialog may be.
+  static const double _windowMargin = 48;
+  static const double _maxDialogHeight = 760;
+
   const ModalBox({
     super.key,
     required this.title,
@@ -128,74 +132,105 @@ class ModalBox extends StatelessWidget {
           color: const Color(0xFF000000).withValues(alpha: 0.5),
           alignment: Alignment.center,
           child: ClickableNoRipple(
-            child: Container(
-              width: width,
-              height: height,
-              constraints: height != null
-                  ? null
-                  : const BoxConstraints(maxHeight: 760),
-              decoration: BoxDecoration(
-                color: p.panel,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              // Border is painted over the content so it keeps the full outer width.
-              foregroundDecoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: p.border, width: 1),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: Column(
-                mainAxisSize: height != null
-                    ? MainAxisSize.max
-                    : MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  DrawBottomBorder(
-                    color: p.border,
-                    child: Padding(
-                      padding: const EdgeInsets.only(
-                        left: 16,
-                        right: 8,
-                        top: 8,
-                        bottom: 8,
+            // The dialog never grows taller than the window (less a margin); a tall form scrolls inside it.
+            child: LayoutBuilder(
+              builder: (context, outer) => Container(
+                width: width,
+                height: height,
+                constraints: height != null
+                    ? null
+                    : BoxConstraints(
+                        maxHeight: (outer.maxHeight - _windowMargin).clamp(
+                          200.0,
+                          _maxDialogHeight,
+                        ),
                       ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: T(title, size: 15, weight: FontWeight.w600),
+                decoration: BoxDecoration(
+                  color: p.panel,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF000000).withValues(alpha: 0.35),
+                      blurRadius: 24,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                // Border is painted over the content so it keeps the full outer width.
+                foregroundDecoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: p.border, width: 1),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  mainAxisSize: height != null
+                      ? MainAxisSize.max
+                      : MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    DrawBottomBorder(
+                      color: p.border,
+                      child: Padding(
+                        padding: const EdgeInsets.only(
+                          left: 16,
+                          right: 8,
+                          top: 8,
+                          bottom: 8,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: T(
+                                title,
+                                size: 14,
+                                weight: FontWeight.w600,
+                              ),
+                            ),
+                            IconBtn(icon: Ic.close, onClick: onClose),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Flexible(
+                      fit: height != null ? FlexFit.tight : FlexFit.loose,
+                      child: height != null
+                          ? Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.max,
+                                spacing: 10,
+                                children: content,
+                              ),
+                            )
+                          : SingleChildScrollView(
+                              primary: false,
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                spacing: 10,
+                                children: content,
+                              ),
+                            ),
+                    ),
+                    if (actions.isNotEmpty)
+                      DrawTopBorder(
+                        color: p.border,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
                           ),
-                          IconBtn(icon: Ic.close, onClick: onClose),
-                        ],
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            spacing: 8,
+                            children: actions,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  Flexible(
-                    fit: height != null ? FlexFit.tight : FlexFit.loose,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: height != null
-                            ? MainAxisSize.max
-                            : MainAxisSize.min,
-                        spacing: 10,
-                        children: content,
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      left: 16,
-                      right: 16,
-                      bottom: 14,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      spacing: 8,
-                      children: actions,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -224,7 +259,6 @@ class SplitPane extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.pal;
     return LayoutBuilder(
       builder: (context, c) {
         final total = (vertical ? c.maxHeight : c.maxWidth).clamp(
@@ -232,26 +266,13 @@ class SplitPane extends StatelessWidget {
           double.infinity,
         );
         final firstDp = total * fraction;
-        const handle = 5.0;
         void drag(double d) =>
             onFraction(((fraction + d / total)).clamp(0.12, 0.88));
         if (vertical) {
           return Column(
             children: [
               SizedBox(height: firstDp, width: double.infinity, child: first),
-              MouseRegion(
-                cursor: SystemMouseCursors.resizeUpDown,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  supportedDevices: kDragDevices,
-                  onVerticalDragUpdate: (d) => drag(d.delta.dy),
-                  child: Container(
-                    height: handle,
-                    width: double.infinity,
-                    color: p.border,
-                  ),
-                ),
-              ),
+              PanelDivider(vertical: true, onDrag: drag),
               Expanded(
                 child: SizedBox(width: double.infinity, child: second),
               ),
@@ -261,19 +282,7 @@ class SplitPane extends StatelessWidget {
         return Row(
           children: [
             SizedBox(width: firstDp, height: double.infinity, child: first),
-            MouseRegion(
-              cursor: SystemMouseCursors.resizeLeftRight,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                supportedDevices: kDragDevices,
-                onHorizontalDragUpdate: (d) => drag(d.delta.dx),
-                child: Container(
-                  width: handle,
-                  height: double.infinity,
-                  color: p.border,
-                ),
-              ),
-            ),
+            PanelDivider(vertical: false, onDrag: drag),
             Expanded(
               child: SizedBox(height: double.infinity, child: second),
             ),
@@ -282,6 +291,125 @@ class SplitPane extends StatelessWidget {
       },
     );
   }
+}
+
+/// A sleek, narrow panel divider with hover highlight and a 3-dot indicator at the center.
+class PanelDivider extends StatefulWidget {
+  const PanelDivider({
+    super.key,
+    this.vertical = false,
+    required this.onDrag,
+    this.thickness = 3.0,
+  });
+
+  /// When true, divides top and bottom panes (dragged vertically).
+  /// When false, divides left and right panes (dragged horizontally).
+  final bool vertical;
+  final ValueChanged<double> onDrag;
+  final double thickness;
+
+  @override
+  State<PanelDivider> createState() => _PanelDividerState();
+}
+
+class _PanelDividerState extends State<PanelDivider> {
+  bool _hovered = false;
+  bool _dragging = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.pal;
+    final active = _hovered || _dragging;
+    final isVert = widget.vertical;
+
+    return MouseRegion(
+      cursor: isVert
+          ? SystemMouseCursors.resizeUpDown
+          : SystemMouseCursors.resizeLeftRight,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        supportedDevices: kDragDevices,
+        onHorizontalDragStart: isVert
+            ? null
+            : (_) => setState(() => _dragging = true),
+        onHorizontalDragUpdate: isVert
+            ? null
+            : (d) => widget.onDrag(d.delta.dx),
+        onHorizontalDragEnd: isVert
+            ? null
+            : (_) => setState(() => _dragging = false),
+        onHorizontalDragCancel: isVert
+            ? null
+            : () => setState(() => _dragging = false),
+        onVerticalDragStart: isVert
+            ? (_) => setState(() => _dragging = true)
+            : null,
+        onVerticalDragUpdate: isVert ? (d) => widget.onDrag(d.delta.dy) : null,
+        onVerticalDragEnd: isVert
+            ? (_) => setState(() => _dragging = false)
+            : null,
+        onVerticalDragCancel: isVert
+            ? () => setState(() => _dragging = false)
+            : null,
+        child: Container(
+          width: isVert ? double.infinity : widget.thickness,
+          height: isVert ? widget.thickness : double.infinity,
+          color: active ? p.accent.withValues(alpha: 0.6) : p.border,
+          child: Stack(
+            alignment: Alignment.center,
+            clipBehavior: Clip.none,
+            children: [
+              AnimatedOpacity(
+                opacity: active ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 120),
+                child: Container(
+                  width: isVert ? 26 : 7,
+                  height: isVert ? 7 : 26,
+                  decoration: BoxDecoration(
+                    color: p.panel,
+                    borderRadius: BorderRadius.circular(3.5),
+                    border: Border.all(
+                      color: p.accent.withValues(alpha: 0.7),
+                      width: 1,
+                    ),
+                  ),
+                  child: isVert
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _dot(p.accent),
+                            const SizedBox(width: 2.5),
+                            _dot(p.accent),
+                            const SizedBox(width: 2.5),
+                            _dot(p.accent),
+                          ],
+                        )
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _dot(p.accent),
+                            const SizedBox(height: 2.5),
+                            _dot(p.accent),
+                            const SizedBox(height: 2.5),
+                            _dot(p.accent),
+                          ],
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _dot(Color color) => Container(
+    width: 2,
+    height: 2,
+    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+  );
 }
 
 /// Scrollable area with a visible scrollbar.

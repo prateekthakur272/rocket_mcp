@@ -1,16 +1,18 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:rocket_mcp/theme/theme.dart';
 
-/// One place that names every icon the app uses (Material Symbols, rounded).
+/// One place that names every icon the app uses: the rounded Material icons, so the whole interface shares one
+/// visual style (the same set DevSpace uses). Pick the icon by meaning (`Ic.tool`, `Ic.resource`, `Ic.prompt` for MCP
+/// primitives) and add new ones here rather than using `Icons` directly in a widget. [Ico] draws them.
 class Ic {
   Ic._();
   static const IconData logo = Icons.rocket_launch_rounded;
   static const IconData close = Icons.close_rounded;
   static const IconData add = Icons.add_rounded;
-  static const IconData timer = Icons.timer_outlined;
+  static const IconData timer = Icons.timer_rounded;
   static const IconData speed = Icons.speed_rounded;
   static const IconData checklist = Icons.checklist_rounded;
-  static const IconData more = Icons.more_vert_rounded;
+  static const IconData more = Icons.more_horiz_rounded;
   static const IconData refresh = Icons.refresh_rounded;
   static const IconData collapseAll = Icons.unfold_less_rounded;
   static const IconData up = Icons.keyboard_arrow_up_rounded;
@@ -38,15 +40,18 @@ class Ic {
   static const IconData workflow = Icons.account_tree_rounded;
   static const IconData stop = Icons.stop_rounded;
   static const IconData settings = Icons.settings_rounded;
+
+  /// A server's configuration (its connection settings): the `{}` glyph.
+  static const IconData configuration = Icons.data_object_rounded;
   static const IconData light = Icons.light_mode_rounded;
   static const IconData dark = Icons.dark_mode_rounded;
   static const IconData cookie = Icons.cookie_rounded;
   static const IconData variables = Icons.data_object_rounded;
   static const IconData environments = Icons.layers_rounded;
   static const IconData sidebar = Icons.view_sidebar_rounded;
-  static const IconData splitV = Icons.horizontal_split_rounded;
-  static const IconData splitH = Icons.vertical_split_rounded;
-  static const IconData compare = Icons.compare_rounded;
+  static const IconData splitV = Icons.vertical_split_rounded;
+  static const IconData splitH = Icons.horizontal_split_rounded;
+  static const IconData compare = Icons.compare_arrows_rounded;
   static const IconData bulb = Icons.lightbulb_rounded;
   static const IconData history = Icons.history_rounded;
   static const IconData search = Icons.search_rounded;
@@ -56,53 +61,77 @@ class Ic {
   static const IconData open = Icons.open_in_new_rounded;
   static const IconData newFile = Icons.note_add_rounded;
   static const IconData newFolder = Icons.create_new_folder_rounded;
-  static const IconData export = Icons.ios_share_rounded;
-  static const IconData import = Icons.file_download_rounded;
+  static const IconData export = Icons.file_upload_rounded;
+  static const IconData import = Icons.input_rounded;
   static const IconData warning = Icons.warning_amber_rounded;
-  static const IconData error = Icons.error_outline_rounded;
-  static const IconData command = Icons.bolt_rounded;
+  static const IconData error = Icons.error_rounded;
+  static const IconData command = Icons.keyboard_command_key_rounded;
+  static const IconData bolt = Icons.bolt_rounded;
   static const IconData moveUp = Icons.arrow_upward_rounded;
   static const IconData moveDown = Icons.arrow_downward_rounded;
   static const IconData reveal = Icons.folder_open_rounded;
   static const IconData tab = Icons.tab_rounded;
   static const IconData link = Icons.link_rounded;
   static const IconData drag = Icons.drag_indicator_rounded;
-  static const IconData person = Icons.account_circle_rounded;
-  static const IconData shield = Icons.security_rounded;
+  static const IconData person = Icons.person_rounded;
+  static const IconData shield = Icons.shield_rounded;
   static const IconData tune = Icons.tune_rounded;
-  static const IconData bug = Icons.bug_report_outlined;
-  static const IconData lock = Icons.lock_outline_rounded;
+  static const IconData bug = Icons.bug_report_rounded;
+  static const IconData lock = Icons.lock_rounded;
   static const IconData eye = Icons.visibility_rounded;
   static const IconData eyeOff = Icons.visibility_off_rounded;
   static const IconData fingerprint = Icons.fingerprint_rounded;
   static const IconData info = Icons.info_rounded;
   static const IconData codec = Icons.transform_rounded;
   static const IconData noBody = Icons.block_rounded;
-  static const IconData formBody = Icons.list_alt_rounded;
+  static const IconData formBody = Icons.dynamic_form_rounded;
   static const IconData graph = Icons.hub_rounded;
-  static const IconData http = Icons.http_rounded;
-  static const IconData websocket = Icons.sync_alt_rounded;
-  static const IconData grpc = Icons.bolt_rounded;
+  static const IconData http = Icons.language_rounded;
+  static const IconData websocket = Icons.swap_horiz_rounded;
+  static const IconData grpc = Icons.lan_rounded;
   static const IconData fmtJson = Icons.data_object_rounded;
   static const IconData fmtHtml = Icons.html_rounded;
-  static const IconData fmtXml = Icons.code_rounded;
+  static const IconData fmtXml = Icons.data_array_rounded;
   static const IconData fmtJs = Icons.javascript_rounded;
-  static const IconData fmtRaw = Icons.description_rounded;
+  static const IconData fmtRaw = Icons.notes_rounded;
   static const IconData fmtHex = Icons.tag_rounded;
-  static const IconData fmtB64 = Icons.transform_rounded;
+  static const IconData fmtB64 = Icons.password_rounded;
+  static const IconData wrap = Icons.wrap_text_rounded;
   static const IconData expandAll = Icons.unfold_more_rounded;
   static const IconData fileGeneric = Icons.insert_drive_file_rounded;
   static const IconData pdf = Icons.picture_as_pdf_rounded;
-  static const IconData audio = Icons.audio_file_rounded;
-  static const IconData video = Icons.video_file_rounded;
+  static const IconData audio = Icons.audiotrack_rounded;
+  static const IconData video = Icons.movie_rounded;
   static const IconData image = Icons.image_rounded;
-  static const IconData key = Icons.vpn_key_rounded;
+  static const IconData key = Icons.key_rounded;
   static const IconData dash = Icons.remove_rounded;
   static const IconData git = Icons.alt_route_rounded;
   static const IconData star = Icons.star_rounded;
   static const IconData apps = Icons.apps_rounded;
   static const IconData favorite = Icons.favorite_rounded;
-  static const IconData arrowOut = Icons.arrow_outward_rounded;
+  static const IconData arrowOut = Icons.north_east_rounded;
+  static const IconData tool = Icons.build_rounded;
+  static const IconData resource = Icons.dataset_rounded;
+  static const IconData prompt = Icons.chat_bubble_rounded;
+  static const IconData resourceTemplate = Icons.data_array_rounded;
+  static const IconData server = Icons.dns_rounded;
+  static const IconData stdio = Icons.terminal_rounded;
+  static const IconData sse = Icons.sensors_rounded;
+  static const IconData streamHttp = Icons.cloud_sync_rounded;
+  static const IconData subscribe = Icons.notifications_active_rounded;
+  static const IconData ping = Icons.network_ping_rounded;
+  static const IconData presets = Icons.bookmarks_rounded;
+  static const IconData connecting = Icons.sync_rounded;
+  static const IconData connect = Icons.power_rounded;
+  static const IconData disconnect = Icons.power_off_rounded;
+  static const IconData outgoing = Icons.north_east_rounded;
+  static const IconData incoming = Icons.south_west_rounded;
+  static const IconData readResource = Icons.find_in_page_rounded;
+  static const IconData traffic = Icons.swap_vert_rounded;
+  static const IconData windowMinimize = Icons.remove_rounded;
+  static const IconData windowMaximize = Icons.crop_square_rounded;
+  static const IconData windowRestore = Icons.filter_none_rounded;
+  static const IconData windowClose = Icons.close_rounded;
 
   /// The GitHub mark (not in the Material set): a sentinel [IconData] that [Ico] draws from the 24x24 outline.
   static const IconData gitHub = IconData(
@@ -266,15 +295,45 @@ final Path _githubParsed = parseSvgPath(_githubPath);
 
 /// A tinted icon of fixed [size] (default tint: the palette's muted colour).
 class Ico extends StatelessWidget {
-  const Ico(this.icon, {super.key, this.tint, this.size = 16});
+  const Ico(
+    this.icon, {
+    super.key,
+    this.tint,
+    this.size = 16,
+    this.withBg = false,
+  });
 
   final IconData icon;
   final Color? tint;
   final double size;
+  final bool withBg;
 
   @override
   Widget build(BuildContext context) {
     final c = tint ?? context.pal.muted;
+    if (icon == Ic.logo) {
+      final assetPath = withBg
+          ? 'assets/app_icon.png'
+          : 'assets/app_icon_nobg.png';
+      return SizedBox(
+        width: size,
+        height: size,
+        child: ClipRRect(
+          borderRadius: withBg
+              ? BorderRadius.circular(size * 0.22)
+              : BorderRadius.zero,
+          child: Image.asset(
+            assetPath,
+            width: size,
+            height: size,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) => Center(
+              child: Icon(Ic.logo, size: size, color: c),
+            ),
+          ),
+        ),
+      );
+    }
     if (icon == Ic.gitHub) {
       return SizedBox(
         width: size,

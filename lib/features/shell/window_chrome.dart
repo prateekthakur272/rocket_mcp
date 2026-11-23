@@ -1,6 +1,5 @@
 // ignore_for_file: constant_identifier_names, non_constant_identifier_names, deprecated_member_use
 import 'package:flutter/widgets.dart';
-import 'package:material_ui/material_ui.dart' show Icons;
 import 'package:rocket_mcp/components/drag_devices.dart';
 import 'package:rocket_mcp/components/modifiers.dart';
 import 'package:rocket_mcp/theme/icons.dart';
@@ -124,16 +123,16 @@ class WindowControls extends StatelessWidget {
     mainAxisSize: MainAxisSize.min,
     children: [
       _CaptionButton(
-        icon: Icons.remove_rounded,
+        icon: Ic.windowMinimize,
         danger: false,
         onClick: onMinimize,
       ),
       _CaptionButton(
-        icon: maximized ? Icons.filter_none_rounded : Icons.crop_square_rounded,
+        icon: maximized ? Ic.windowRestore : Ic.windowMaximize,
         danger: false,
         onClick: onToggleMaximize,
       ),
-      _CaptionButton(icon: Icons.close_rounded, danger: true, onClick: onClose),
+      _CaptionButton(icon: Ic.windowClose, danger: true, onClick: onClose),
     ],
   );
 }

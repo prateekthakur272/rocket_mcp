@@ -26,11 +26,27 @@ class WindowGeometry {
       WindowGeometry(width, height, x, y, maximized ?? this.maximized);
 }
 
-/// The layout the user left the window in (sidebar), restored on the next launch.
+/// The panel sizes the user left the window with (sidebar, list pane, request / response split), restored on the
+/// next launch.
 class SavedLayout {
-  const SavedLayout({this.sidebarWidth = 0.22, this.sidebarVisible = true});
+  const SavedLayout({
+    this.sidebarWidth = 0.22,
+    this.sidebarVisible = true,
+    this.listPaneWidth = defaultListPaneWidth,
+    this.splitFraction = defaultSplitFraction,
+  });
+
+  static const double defaultListPaneWidth = 220;
+  static const double defaultSplitFraction = 0.5;
+
   final double sidebarWidth;
   final bool sidebarVisible;
+
+  /// Width in dp of the Tools / Resources / Prompts list.
+  final double listPaneWidth;
+
+  /// The share of the workspace taken by the request pane (the rest is the response pane).
+  final double splitFraction;
 }
 
 /// Everything the app keeps on disk, all in one data folder (`~/.rocketmcp`): settings, layout, small flags, window
@@ -78,15 +94,25 @@ final class AppStore {
     if (json == null) return const SavedLayout();
     final width = json['sidebarWidth'];
     final visible = json['sidebarVisible'];
+    final listWidth = json['listPaneWidth'];
+    final split = json['splitFraction'];
     return SavedLayout(
       sidebarWidth: width is num ? width.toDouble() : 0.22,
       sidebarVisible: visible is bool ? visible : true,
+      listPaneWidth: listWidth is num
+          ? listWidth.toDouble()
+          : SavedLayout.defaultListPaneWidth,
+      splitFraction: split is num
+          ? split.toDouble()
+          : SavedLayout.defaultSplitFraction,
     );
   }
 
   static void saveLayout(SavedLayout layout) => _writeJson(_layoutFile, {
     'sidebarWidth': layout.sidebarWidth,
     'sidebarVisible': layout.sidebarVisible,
+    'listPaneWidth': layout.listPaneWidth,
+    'splitFraction': layout.splitFraction,
   });
 
   /// A small named value the app remembers that is neither a setting nor layout, for example the update version the

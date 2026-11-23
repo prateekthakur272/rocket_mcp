@@ -1,20 +1,39 @@
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
+import 'package:rocket_mcp/app/mcp_session.dart';
 import 'package:rocket_mcp/app/modal.dart';
 import 'package:rocket_mcp/app/title_menu_state.dart';
+import 'package:rocket_mcp/core/mcp/model.dart';
 import 'package:rocket_mcp/core/model/app_settings.dart';
 import 'package:rocket_mcp/core/storage/app_store.dart';
+import 'package:rocket_mcp/core/storage/server_store.dart';
 
-/// The single owner of application state: settings, the dialog that is showing, layout and update status. Widgets reach
-/// it through [AppScope]; behaviour that grows beyond state goes into extensions in `app_state_*.dart` files.
+/// The single owner of application state: settings, dialogs, MCP servers and sessions.
 class AppState extends ChangeNotifier {
-  AppState() {
+  AppState({List<McpServerConfig>? initialServers}) {
     titleMenu.addListener(notifyListeners);
     settings = AppStore.loadSettings();
     final layout = AppStore.loadLayout();
     _sidebarWidth = layout.sidebarWidth.clamp(minSidebarWidth, maxSidebarWidth);
+    _splitFraction = layout.splitFraction.clamp(
+      minSplitFraction,
+      maxSplitFraction,
+    );
+    _listPaneWidth = layout.listPaneWidth.clamp(
+      minListPaneWidth,
+      maxListPaneWidth,
+    );
     _sidebarVisible = layout.sidebarVisible;
+
+    // Load servers
+    _servers = List.of(initialServers ?? ServerStore.loadServers());
+    for (final s in _servers) {
+      _initSession(s);
+    }
+    if (_servers.isNotEmpty) {
+      _activeServerId = _servers.first.id;
+    }
   }
 
   static const double minSidebarWidth = 0.12;
@@ -52,17 +71,37 @@ class AppState extends ChangeNotifier {
   }
 
   String? _availableUpdate;
-
-  /// The newer version found by the update check, or null. Drives the status-bar download icon.
   String? get availableUpdate => _availableUpdate;
   set availableUpdate(String? version) {
     _availableUpdate = version;
     notifyListeners();
   }
 
-  late double _sidebarWidth;
+  static const double minListPaneWidth = 160;
+  static const double maxListPaneWidth = 560;
 
-  /// The sidebar's share of the window width.
+  static const double minSplitFraction = 0.12;
+  static const double maxSplitFraction = 0.88;
+
+  late double _splitFraction;
+
+  /// The share of the workspace taken by the request pane; the response pane has the rest.
+  double get splitFraction => _splitFraction;
+  set splitFraction(double value) {
+    _splitFraction = value.clamp(minSplitFraction, maxSplitFraction);
+    notifyListeners();
+  }
+
+  late double _listPaneWidth;
+
+  /// Width in dp of the Tools / Resources / Prompts list, shared by all three so it keeps its size across tabs.
+  double get listPaneWidth => _listPaneWidth;
+  set listPaneWidth(double value) {
+    _listPaneWidth = value.clamp(minListPaneWidth, maxListPaneWidth);
+    notifyListeners();
+  }
+
+  late double _sidebarWidth;
   double get sidebarWidth => _sidebarWidth;
   set sidebarWidth(double value) {
     _sidebarWidth = value.clamp(minSidebarWidth, maxSidebarWidth);
@@ -77,11 +116,104 @@ class AppState extends ChangeNotifier {
   }
 
   String? _prefsSection;
-
-  /// The Preferences section to open next time the dialog shows.
   String? get prefsSection => _prefsSection;
   set prefsSection(String? value) {
     _prefsSection = value;
+    notifyListeners();
+  }
+
+  // ==========================================
+  // MCP Servers & Sessions
+  // ==========================================
+
+  List<McpServerConfig> _servers = [];
+  List<McpServerConfig> get servers => List.unmodifiable(_servers);
+
+  final Map<String, McpSession> _sessions = {};
+  String? _activeServerId;
+  String? get activeServerId => _activeServerId;
+
+  McpServerConfig? get activeServer {
+    final id = _activeServerId;
+    if (id == null) return null;
+    return _servers.where((s) => s.id == id).firstOrNull;
+  }
+
+  McpSession? get activeSession {
+    final id = _activeServerId;
+    if (id == null) return null;
+    return _sessions[id];
+  }
+
+  McpSession? getSession(String id) => _sessions[id];
+
+  void _initSession(McpServerConfig server) {
+    final session = McpSession(config: server);
+    session.addListener(notifyListeners);
+    _sessions[server.id] = session;
+    if (server.autoConnect) {
+      session.connect();
+    }
+  }
+
+  void selectServer(String id) {
+    if (_activeServerId != id && _sessions.containsKey(id)) {
+      _activeServerId = id;
+      notifyListeners();
+    }
+  }
+
+  void addServer(McpServerConfig server) {
+    _servers.add(server);
+    _initSession(server);
+    _activeServerId = server.id;
+    ServerStore.saveServers(_servers);
+    notifyListeners();
+  }
+
+  void updateServer(McpServerConfig server) {
+    final index = _servers.indexWhere((s) => s.id == server.id);
+    if (index >= 0) {
+      _servers[index] = server;
+      _sessions[server.id]?.updateConfig(server);
+      ServerStore.saveServers(_servers);
+      notifyListeners();
+    }
+  }
+
+  void deleteServer(String id) {
+    final session = _sessions.remove(id);
+    session?.removeListener(notifyListeners);
+    session?.dispose();
+
+    _servers.removeWhere((s) => s.id == id);
+    ServerStore.saveServers(_servers);
+
+    if (_activeServerId == id) {
+      _activeServerId = _servers.isNotEmpty ? _servers.first.id : null;
+    }
+    notifyListeners();
+  }
+
+  void duplicateServer(String id) {
+    final target = _servers.where((s) => s.id == id).firstOrNull;
+    if (target == null) return;
+
+    final copy = target.copyWith(
+      id: 'server_${DateTime.now().microsecondsSinceEpoch}',
+      name: '${target.name} (Copy)',
+    );
+    addServer(copy);
+  }
+
+  void importServers(List<McpServerConfig> imported) {
+    if (imported.isEmpty) return;
+    for (final s in imported) {
+      _servers.add(s);
+      _initSession(s);
+    }
+    _activeServerId = imported.first.id;
+    ServerStore.saveServers(_servers);
     notifyListeners();
   }
 
@@ -96,7 +228,6 @@ class AppState extends ChangeNotifier {
     settings.copyWith(verticalLayout: !settings.verticalLayout),
   );
 
-  /// Changes the interface size by one step; 0 restores the default.
   void zoom(int delta) {
     final size = delta == 0
         ? AppSettings.defaultFontSize
@@ -107,12 +238,20 @@ class AppState extends ChangeNotifier {
     updateSettings(settings.copyWith(fontSize: size));
   }
 
-  /// The values whose change should be saved right away (see the shell's layout listener).
-  List<Object?> layoutSnapshot() => [sidebarWidth, sidebarVisible];
+  List<Object?> layoutSnapshot() => [
+    sidebarWidth,
+    sidebarVisible,
+    listPaneWidth,
+    splitFraction,
+  ];
 
-  /// Writes the layout to disk. Settings are saved as they change.
   void persist() => AppStore.saveLayout(
-    SavedLayout(sidebarWidth: sidebarWidth, sidebarVisible: sidebarVisible),
+    SavedLayout(
+      sidebarWidth: sidebarWidth,
+      sidebarVisible: sidebarVisible,
+      listPaneWidth: listPaneWidth,
+      splitFraction: splitFraction,
+    ),
   );
 
   @override
@@ -120,6 +259,11 @@ class AppState extends ChangeNotifier {
     _toastTimer?.cancel();
     titleMenu.removeListener(notifyListeners);
     titleMenu.dispose();
+    for (final s in _sessions.values) {
+      s.removeListener(notifyListeners);
+      s.dispose();
+    }
+    _sessions.clear();
     super.dispose();
   }
 }

@@ -16,7 +16,12 @@ IconData _menuIcon(String l) {
   if (l.startsWith('Run')) return Ic.play;
   if (l.startsWith('Environments')) return Ic.environments;
   if (l.startsWith('Settings')) return Ic.settings;
+  if (l.startsWith('Configurations')) return Ic.configuration;
   if (l.startsWith('Variables')) return Ic.variables;
+  if (l.startsWith('Connect')) return Ic.connect;
+  if (l.startsWith('Disconnect')) return Ic.disconnect;
+  if (l.startsWith('Duplicate')) return Ic.clone;
+  if (l.startsWith('Edit')) return Ic.edit;
   if (l.startsWith('Rename')) return Ic.rename;
   if (l.startsWith('Clone')) return Ic.clone;
   if (l.startsWith('Show in ')) return Ic.reveal;
@@ -37,10 +42,18 @@ IconData _menuIcon(String l) {
 
 /// A menu entry; a null [label] is a divider.
 class MenuItem {
-  const MenuItem(this.label, {this.danger = false, this.action = _noop});
+  const MenuItem(
+    this.label, {
+    this.danger = false,
+    this.shortcut,
+    this.action = _noop,
+  });
 
   final String? label;
   final bool danger;
+
+  /// Shown on the right as a small key chip, e.g. `⌘N`.
+  final String? shortcut;
   final VoidCallback action;
 }
 
@@ -102,6 +115,7 @@ class _ContextMenuState extends State<ContextMenu> {
     final picked = await showAnchoredPopup<int>(
       context,
       anchor: anchor,
+      width: 190,
       builder: (ctx, close) => Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -109,28 +123,49 @@ class _ContextMenuState extends State<ContextMenu> {
           for (var i = 0; i < items.length; i++)
             if (items[i].label == null)
               Container(
-                margin: const EdgeInsets.symmetric(vertical: 3),
+                margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
                 height: 1,
-                color: p.border,
+                color: p.border.withValues(alpha: 0.6),
               )
             else
               PopupRow(
+                danger: items[i].danger,
                 onClick: () => close(i),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
-                  spacing: 10,
+                  spacing: 7,
                   children: [
                     Ico(
                       _menuIcon(items[i].label!),
                       tint: items[i].danger ? p.err : p.muted,
-                      size: 16,
+                      size: 13.5,
                     ),
-                    Flexible(
+                    Expanded(
                       child: T(
                         items[i].label!,
                         color: items[i].danger ? p.err : p.text,
+                        size: 12.5,
+                        lineHeight: 1.2,
                       ),
                     ),
+                    if (items[i].shortcut != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: p.field,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: T(
+                          items[i].shortcut!,
+                          color: p.muted,
+                          size: 10,
+                          mono: true,
+                          lineHeight: 1.2,
+                        ),
+                      ),
                   ],
                 ),
               ),

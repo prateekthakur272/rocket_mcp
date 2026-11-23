@@ -138,6 +138,36 @@ class AppMenus {
       ],
     ]);
 
-    return [file, view, window, help];
+    final serverMenu = MenuSpec('Server', [
+      item(
+        'Add Server…',
+        () => state.modal = const ModalServerConfig(),
+        shortcut: key(LogicalKeyboardKey.keyN),
+      ),
+      item(
+        'Import / Export Servers…',
+        () => state.modal = const ModalImportExport(),
+        shortcut: key(LogicalKeyboardKey.keyI, shift: true),
+      ),
+      const MenuSeparator(),
+      item(
+        'Connect / Reconnect Active Server',
+        () => state.activeSession?.connect(),
+        shortcut: key(LogicalKeyboardKey.keyR),
+        enabled: state.activeSession != null,
+      ),
+      item(
+        'Disconnect Active Server',
+        () => state.activeSession?.disconnect(),
+        enabled: state.activeSession != null,
+      ),
+      item(
+        'Ping Server',
+        () => state.activeSession?.ping(),
+        enabled: state.activeSession != null,
+      ),
+    ]);
+
+    return [file, view, serverMenu, window, help];
   }
 }

@@ -8,6 +8,7 @@ import 'package:rocket_mcp/components/field.dart';
 import 'package:rocket_mcp/components/layout.dart';
 import 'package:rocket_mcp/components/modifiers.dart';
 import 'package:rocket_mcp/components/text.dart';
+import 'package:rocket_mcp/components/toggle.dart';
 import 'package:rocket_mcp/core/model/app_settings.dart';
 import 'package:rocket_mcp/core/storage/app_store.dart';
 import 'package:rocket_mcp/platform/platform.dart';
@@ -74,40 +75,6 @@ class _BorderThenFill extends CustomPainter {
   @override
   bool shouldRepaint(_BorderThenFill o) =>
       o.border != border || o.fill != fill || o.radius != radius;
-}
-
-class _Toggle extends StatelessWidget {
-  const _Toggle({required this.on, required this.onChange});
-  final bool on;
-  final ValueChanged<bool> onChange;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.pal;
-    return Clickable(
-      onClick: () => onChange(!on),
-      cursor: SystemMouseCursors.click,
-      borderRadius: BorderRadius.circular(11),
-      child: Container(
-        width: 38,
-        height: 22,
-        padding: const EdgeInsets.all(3),
-        alignment: on ? Alignment.centerRight : Alignment.centerLeft,
-        decoration: BoxDecoration(
-          color: on ? p.accent : p.border,
-          borderRadius: BorderRadius.circular(11),
-        ),
-        child: Container(
-          width: 16,
-          height: 16,
-          decoration: const BoxDecoration(
-            color: Color(0xFFFFFFFF),
-            shape: BoxShape.circle,
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _NumberField extends StatelessWidget {
@@ -221,7 +188,7 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
       _Pref(
         _Section.General,
         'Save automatically',
-        _Toggle(
+        Toggle(
           on: s.autoSave,
           onChange: (v) => set(s.copyWith(autoSave: v)),
         ),
@@ -318,7 +285,7 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
       _Pref(
         _Section.Network,
         'Verify SSL certificates',
-        _Toggle(
+        Toggle(
           on: s.sslVerify,
           onChange: (v) => set(s.copyWith(sslVerify: v)),
         ),
@@ -330,7 +297,7 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
       _Pref(
         _Section.Network,
         'Use an HTTP proxy',
-        _Toggle(
+        Toggle(
           on: s.proxyEnabled,
           onChange: (v) => set(s.copyWith(proxyEnabled: v)),
         ),

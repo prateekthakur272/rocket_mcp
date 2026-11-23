@@ -175,29 +175,44 @@ class _PopupRoute<R> extends PopupRoute<R> {
     Animation<double> secondaryAnimation,
   ) {
     final p = pal;
-    final body = Material(
-      color: p.panel,
-      elevation: 3,
-      shadowColor: const Color(0xFF000000),
-      borderRadius: BorderRadius.circular(radius),
-      clipBehavior: Clip.antiAlias,
-      child: width != null
-          ? SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: builder(context, ([v]) => Navigator.of(context).pop(v)),
-            )
-          : ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 112, maxWidth: 280),
-              child: IntrinsicWidth(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: builder(
-                    context,
-                    ([v]) => Navigator.of(context).pop(v),
-                  ),
-                ),
+    final panel = width != null
+        ? SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 4),
+            child: builder(context, ([v]) => Navigator.of(context).pop(v)),
+          )
+        : ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 120, maxWidth: 280),
+            child: IntrinsicWidth(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 4),
+                child: builder(context, ([v]) => Navigator.of(context).pop(v)),
               ),
             ),
+          );
+    final body = Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: p.panel,
+        borderRadius: BorderRadius.circular(radius),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF000000).withValues(alpha: 0.38),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+          BoxShadow(
+            color: const Color(0xFF000000).withValues(alpha: 0.12),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      // The border is painted over the content so it takes no layout space.
+      foregroundDecoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: p.border.withValues(alpha: 0.9), width: 1),
+      ),
+      child: panel,
     );
     return themes.wrap(
       FadeTransition(
@@ -218,7 +233,7 @@ Future<R?> showAnchoredPopup<R>(
   required PopupBuilder<R> builder,
   double? width,
   Offset offset = Offset.zero,
-  double radius = 4,
+  double radius = 8,
 }) {
   final nav = Navigator.of(context, rootNavigator: true);
   return nav.push<R>(
@@ -240,22 +255,37 @@ Rect anchorRectOf(BuildContext context) {
   return box.localToGlobal(Offset.zero) & box.size;
 }
 
-/// Standard menu row of [Dropdown]/[ContextMenu] (48dp tall, 14dp side padding).
+/// Standard menu row of [Dropdown]/[ContextMenu]: 28dp tall, rounded hover highlight inset from the panel edge.
 class PopupRow extends StatelessWidget {
-  const PopupRow({super.key, required this.onClick, required this.child});
+  const PopupRow({
+    super.key,
+    required this.onClick,
+    required this.child,
+    this.danger = false,
+  });
   final VoidCallback onClick;
   final Widget child;
 
+  /// Tints the hover highlight with the error colour.
+  final bool danger;
+
   @override
   Widget build(BuildContext context) {
+    final p = context.pal;
     return HoverBuilder(
       cursor: SystemMouseCursors.click,
       onTap: onClick,
-      indicate: true,
       builder: (ctx, hov) => Container(
-        constraints: const BoxConstraints(minHeight: 48),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+        constraints: const BoxConstraints(minHeight: 28),
+        margin: const EdgeInsets.symmetric(vertical: 1),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         alignment: Alignment.centerLeft,
+        decoration: BoxDecoration(
+          color: hov
+              ? (danger ? p.err.withValues(alpha: 0.15) : p.hover)
+              : const Color(0x00000000),
+          borderRadius: BorderRadius.circular(5),
+        ),
         child: child,
       ),
     );
@@ -273,7 +303,11 @@ class Dropdown extends StatelessWidget {
     this.weight,
     this.optionColor,
     this.bordered = true,
+    this.expand = false,
   });
+
+  /// Fill the available width instead of fitting the selected text.
+  final bool expand;
 
   final String selected;
   final List<String> options;
@@ -332,10 +366,11 @@ class Dropdown extends StatelessWidget {
                   )
                 : null,
             child: Row(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
               spacing: 6,
               children: [
                 Flexible(
+                  fit: expand ? FlexFit.tight : FlexFit.loose,
                   child: T(
                     selected,
                     color: color ?? p.text,

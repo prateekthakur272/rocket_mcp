@@ -1,9 +1,11 @@
 import 'package:flutter/widgets.dart';
+import 'package:rocket_mcp/components/layout.dart' show CONTROL_H;
 import 'package:rocket_mcp/components/modifiers.dart';
 import 'package:rocket_mcp/components/text.dart';
 import 'package:rocket_mcp/theme/theme.dart';
 
-/// A bordered segmented selector: one option is filled with the accent colour.
+/// A compact segmented selector that is as tall as a [Btn] (so it sits level with buttons): one option is filled
+/// with the accent colour.
 class Segmented extends StatelessWidget {
   const Segmented({
     super.key,
@@ -12,6 +14,9 @@ class Segmented extends StatelessWidget {
     required this.onSelect,
     this.itemKey,
   });
+
+  static const double _inset = 2;
+  static const double _outerRadius = 6;
 
   final List<String> options;
   final String selected;
@@ -23,41 +28,41 @@ class Segmented extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.pal;
+    const itemRadius = _outerRadius - _inset;
     return Container(
-      padding: const EdgeInsets.all(2),
+      height: CONTROL_H,
+      padding: const EdgeInsets.all(_inset),
       decoration: BoxDecoration(
-        color: p.bg,
-        borderRadius: BorderRadius.circular(8),
+        color: p.field,
+        borderRadius: BorderRadius.circular(_outerRadius),
       ),
-      // Borders are painted over the content so they take no layout space.
+      // The border is painted over the content so it takes no layout space.
       foregroundDecoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(_outerRadius),
         border: Border.all(color: p.border, width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        spacing: 2,
+        spacing: _inset,
         children: [
           for (final o in options)
             Clickable(
               key: itemKey?.call(o),
               onClick: () => onSelect(o),
               cursor: SystemMouseCursors.click,
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(itemRadius),
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 5,
-                ),
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 decoration: BoxDecoration(
                   color: o == selected ? p.accent : const Color(0x00000000),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(itemRadius),
                 ),
                 child: T(
                   o,
-                  color: o == selected ? const Color(0xFF000000) : p.text,
+                  color: o == selected ? const Color(0xFFFFFFFF) : p.text,
                   size: 12,
-                  weight: o == selected ? FontWeight.w600 : null,
+                  weight: FontWeight.w500,
                 ),
               ),
             ),
