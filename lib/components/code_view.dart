@@ -16,6 +16,8 @@ class CodeView extends StatefulWidget {
     this.wrap = true,
     this.query = '',
     this.focusLine = -1,
+    this.borderRadius = const BorderRadius.all(Radius.circular(5)),
+    this.bordered = true,
   });
 
   final String text;
@@ -23,6 +25,8 @@ class CodeView extends StatefulWidget {
   final bool wrap;
   final String query;
   final int focusLine;
+  final BorderRadius? borderRadius;
+  final bool bordered;
 
   @override
   State<CodeView> createState() => _CodeViewState();
@@ -147,15 +151,21 @@ class _CodeViewState extends State<CodeView> {
     );
     final numStyle = base.copyWith(color: p.muted.withValues(alpha: 0.6));
     return Container(
-      clipBehavior: Clip.antiAlias,
+      clipBehavior:
+          (widget.borderRadius != null &&
+              widget.borderRadius != BorderRadius.zero)
+          ? Clip.antiAlias
+          : Clip.none,
       decoration: BoxDecoration(
         color: p.field,
-        borderRadius: BorderRadius.circular(5),
+        borderRadius: widget.borderRadius,
       ),
-      foregroundDecoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(5),
-        border: Border.all(color: p.border, width: 1),
-      ),
+      foregroundDecoration: widget.bordered
+          ? BoxDecoration(
+              borderRadius: widget.borderRadius,
+              border: Border.all(color: p.border, width: 1),
+            )
+          : null,
       child: SelectionArea(
         child: overlayScrollbarTheme(
           Scrollbar(

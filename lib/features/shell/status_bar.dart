@@ -1,10 +1,12 @@
 import 'package:flutter/widgets.dart';
 import 'package:material_ui/material_ui.dart' show Tooltip;
 import 'package:rocket_mcp/app/app_state.dart';
+import 'package:rocket_mcp/app/mcp_session.dart';
 import 'package:rocket_mcp/app/modal.dart';
 import 'package:rocket_mcp/components/buttons.dart';
 import 'package:rocket_mcp/components/modifiers.dart';
 import 'package:rocket_mcp/components/text.dart';
+import 'package:rocket_mcp/core/mcp/model.dart';
 import 'package:rocket_mcp/platform/platform.dart';
 import 'package:rocket_mcp/theme/icons.dart';
 import 'package:rocket_mcp/theme/theme.dart';
@@ -78,20 +80,7 @@ class StatusBar extends StatelessWidget {
               ),
             ],
           ),
-          Row(
-            spacing: 4,
-            children: [
-              Container(
-                width: 7,
-                height: 7,
-                decoration: BoxDecoration(
-                  color: p.muted,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              T('not connected', size: 11, color: p.muted),
-            ],
-          ),
+          _ConnectionStatus(session: state.activeSession),
           const Spacer(),
           Clickable(
             onClick: () => state.modal = const ModalPalette(),
@@ -106,6 +95,51 @@ class StatusBar extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The active server's connection state at the left of the status bar: a coloured dot, the server's name and its state.
+class _ConnectionStatus extends StatelessWidget {
+  const _ConnectionStatus({required this.session});
+  final McpSession? session;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.pal;
+    final active = session;
+    if (active == null) {
+      return T('no server selected', size: 11, color: p.muted);
+    }
+    // The session notifies on its own, so the bar follows connects and disconnects without waiting for app state.
+    return ListenableBuilder(
+      listenable: active,
+      builder: (context, _) {
+        final status = active.status;
+        final color = switch (status) {
+          McpServerStatus.connected => p.ok,
+          McpServerStatus.connecting => p.accent,
+          McpServerStatus.error => p.err,
+          McpServerStatus.disconnected => p.muted,
+        };
+        return Row(
+          spacing: 6,
+          children: [
+            Container(
+              width: 7,
+              height: 7,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            T(
+              '${active.config.name} · ${status.label.toLowerCase()}',
+              size: 11,
+              color: status == McpServerStatus.connected ? p.text : p.muted,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        );
+      },
     );
   }
 }

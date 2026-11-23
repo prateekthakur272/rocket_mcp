@@ -1,33 +1,48 @@
 // ignore_for_file: constant_identifier_names, non_constant_identifier_names, deprecated_member_use
 import 'package:flutter/widgets.dart';
-import 'package:rocket_mcp/utils/app_config.dart';
-import 'package:rocket_mcp/components/segmented.dart';
+import 'package:material_ui/material_ui.dart' show Icons;
 import 'package:rocket_mcp/app/app_state.dart';
 import 'package:rocket_mcp/components/buttons.dart';
 import 'package:rocket_mcp/components/field.dart';
 import 'package:rocket_mcp/components/layout.dart';
 import 'package:rocket_mcp/components/modifiers.dart';
+import 'package:rocket_mcp/components/segmented.dart';
 import 'package:rocket_mcp/components/text.dart';
 import 'package:rocket_mcp/components/toggle.dart';
 import 'package:rocket_mcp/core/model/app_settings.dart';
 import 'package:rocket_mcp/core/storage/app_store.dart';
 import 'package:rocket_mcp/platform/platform.dart';
 import 'package:rocket_mcp/theme/theme.dart';
+import 'package:rocket_mcp/utils/app_config.dart';
 
 enum _Section {
-  General('General', 'How ${AppConfig.NAME} behaves day to day.'),
-  Appearance('Appearance', 'Theme, size and layout.'),
-  Connections('Connections', 'Defaults applied to every server connection.'),
-  Network('Network', 'Certificates and proxy.'),
+  General(
+    'General',
+    'How ${AppConfig.NAME} behaves day to day.',
+    Icons.tune_rounded,
+  ),
+  Appearance('Appearance', 'Theme, size and layout.', Icons.palette_rounded),
+  Connections(
+    'Connections',
+    'Defaults applied to every server connection.',
+    Icons.hub_rounded,
+  ),
+  Network('Network', 'Certificates and proxy.', Icons.language_rounded),
   Shortcuts(
     'Shortcuts',
     'Keyboard shortcuts. Use Ctrl instead of ⌘ on Windows and Linux.',
+    Icons.keyboard_outlined,
   ),
-  Data('Data', 'Where ${AppConfig.NAME} keeps your files.');
+  Data(
+    'Data',
+    'Where ${AppConfig.NAME} keeps your files.',
+    Icons.folder_outlined,
+  );
 
-  const _Section(this.label, this.blurb);
+  const _Section(this.label, this.blurb, this.icon);
   final String label;
   final String blurb;
+  final IconData icon;
 }
 
 /// One setting: what it is, a line of explanation, and the control that changes it.
@@ -115,43 +130,7 @@ class _NumberField extends StatelessWidget {
   );
 }
 
-class _NavItem extends StatelessWidget {
-  const _NavItem({
-    required this.label,
-    required this.selected,
-    required this.onClick,
-  });
-  final String label;
-  final bool selected;
-  final VoidCallback onClick;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.pal;
-    return HoverBuilder(
-      indicate: true,
-      borderRadius: BorderRadius.circular(7),
-      cursor: SystemMouseCursors.click,
-      onTap: onClick,
-      builder: (ctx, hov) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected
-              ? p.accent.withValues(alpha: 0.16)
-              : (hov ? p.hover : const Color(0x00000000)),
-          borderRadius: BorderRadius.circular(7),
-        ),
-        child: T(
-          label,
-          color: selected ? p.accent : p.text,
-          weight: selected ? FontWeight.w600 : null,
-        ),
-      ),
-    );
-  }
-}
-
-/// App-level preferences: sections on the left, settings with a line of explanation each on the right, and a search across all of them.
+/// App-level preferences dialog modeled on DevSpace: top segmented pill bar, clean cards, search filter, and done action.
 class PreferencesDialog extends StatefulWidget {
   const PreferencesDialog({super.key, required this.state});
   final AppState state;
@@ -192,7 +171,7 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
           on: s.autoSave,
           onChange: (v) => set(s.copyWith(autoSave: v)),
         ),
-        desc: 'Saves a request just before it is sent.',
+        desc: 'Saves tool parameters and prompt fields just before requests are dispatched.',
       ),
       _Pref(
         _Section.Appearance,
@@ -328,12 +307,47 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
           ),
         ),
       ],
-      for (final (what, keys) in const <(String, String)>[
-        ('Command palette', '⌘K'),
-        ('Show / hide sidebar', '⌘B'),
-        ('Switch workspace layout', '⌘⇧L'),
-        ('Zoom in / out / reset', '⌘+  ⌘−  ⌘0'),
-        ('Preferences', '⌘,'),
+      for (final (what, keys) in [
+        (
+          'Command palette',
+          '${Platform.isMac ? '⌘' : 'Ctrl+'}K  /  ${Platform.isMac ? '⌘' : 'Ctrl+'}P',
+        ),
+        ('Show / hide sidebar', '${Platform.isMac ? '⌘' : 'Ctrl+'}B'),
+        (
+          'Switch workspace layout',
+          '${Platform.isMac ? '⌘⇧' : 'Ctrl+Shift+'}L',
+        ),
+        ('Switch workspace tabs', '${Platform.isMac ? '⌘' : 'Ctrl+'}1 – 6'),
+        (
+          'Next / previous tab',
+          Platform.isMac
+              ? '⌃⇥  /  ⌃⇧⇥  (${Platform.isMac ? '⌘' : 'Ctrl+'}[ / ])'
+              : 'Ctrl+Tab  /  Ctrl+Shift+Tab',
+        ),
+        ('New server', '${Platform.isMac ? '⌘' : 'Ctrl+'}N'),
+        (
+          'Connect / reconnect active server',
+          '${Platform.isMac ? '⌘' : 'Ctrl+'}R',
+        ),
+        (
+          'Disconnect active server',
+          '${Platform.isMac ? '⌘⇧' : 'Ctrl+Shift+'}D',
+        ),
+        ('Refresh capabilities', '${Platform.isMac ? '⌘⇧' : 'Ctrl+Shift+'}R'),
+        ('Ping active server', '${Platform.isMac ? '⌘⇧' : 'Ctrl+Shift+'}P'),
+        (
+          'Import / export servers',
+          '${Platform.isMac ? '⌘⇧' : 'Ctrl+Shift+'}I',
+        ),
+        ('Open data folder', '${Platform.isMac ? '⌘⇧' : 'Ctrl+Shift+'}O'),
+        (
+          'Zoom in / out / reset',
+          '${Platform.isMac ? '⌘+' : 'Ctrl+='}  ${Platform.isMac ? '⌘−' : 'Ctrl+-'}  ${Platform.isMac ? '⌘0' : 'Ctrl+0'}',
+        ),
+        (
+          'Preferences / Settings',
+          Platform.isMac ? '⌘,  /  ⌘/' : 'Ctrl+,  /  F1',
+        ),
       ])
         _Pref(
           _Section.Shortcuts,
@@ -388,7 +402,7 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
                   ),
                 ],
               ),
-        desc: 'Restore every setting to its default. Your collections and environments are not touched.',
+        desc: 'Restore every setting to its default. Your server configurations are not touched.',
       ),
     ];
 
@@ -410,146 +424,223 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
       groups.putIfAbsent(x.section, () => []).add(x);
     }
 
-    return ModalBox(
+    return ModalScaffold(
       title: 'Preferences',
+      width: 680,
       onClose: () => state.modal = null,
-      width: 900,
-      height: 620,
       actions: [
         Expanded(
           child: T(
             'Changes are saved as you make them.',
             color: p.muted,
-            size: 12,
+            size: 11.5,
           ),
         ),
-        Btn(label: 'Done', onClick: () => state.modal = null, primary: true),
+        Btn(
+          label: 'Done',
+          primary: true,
+          height: 32,
+          onClick: () => state.modal = null,
+        ),
       ],
-      content: [
-        Expanded(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: 18,
-            children: [
-              SizedBox(
-                width: 190,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  spacing: 4,
-                  children: [
-                    Field(
-                      value: query,
-                      onChange: (v) => setState(() => query = v),
-                      placeholder: 'Search settings',
-                      highlightVars: false,
-                    ),
-                    const SizedBox(height: 6),
-                    for (final sec in _Section.values)
-                      _NavItem(
-                        label: sec.label,
-                        selected: !searching && sec == section,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 500),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 1. Top Category Segmented Pills Bar (matching DevSpace)
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: p.field,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: p.border, width: 1),
+              ),
+              child: Row(
+                children: [
+                  for (final cat in _Section.values)
+                    Expanded(
+                      child: ClickableNoRipple(
                         onClick: () => setState(() {
                           query = '';
-                          section = sec;
+                          section = cat;
                         }),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 140),
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          decoration: BoxDecoration(
+                            color: !searching && section == cat
+                                ? p.panel
+                                : const Color(0x00000000),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: !searching && section == cat
+                                  ? p.border
+                                  : const Color(0x00000000),
+                              width: 1,
+                            ),
+                            boxShadow: !searching && section == cat
+                                ? [
+                                    BoxShadow(
+                                      color: const Color(
+                                        0xFF000000,
+                                      ).withValues(alpha: p.dark ? 0.3 : 0.05),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                cat.icon,
+                                size: 13,
+                                color: !searching && section == cat
+                                    ? p.accent
+                                    : p.muted,
+                              ),
+                              const SizedBox(width: 5),
+                              Flexible(
+                                child: T(
+                                  cat.label,
+                                  size: 11.5,
+                                  weight: !searching && section == cat
+                                      ? FontWeight.w600
+                                      : FontWeight.w500,
+                                  color: !searching && section == cat
+                                      ? p.text
+                                      : p.muted,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                  ],
-                ),
+                    ),
+                ],
               ),
-              Container(width: 1, color: p.border),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    spacing: 14,
-                    children: [
-                      if (!searching)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          spacing: 2,
-                          children: [
-                            T(section.label, size: 18, weight: FontWeight.w700),
-                            T(section.blurb, color: p.muted, size: 12),
-                          ],
-                        )
-                      else
-                        T(
+            ),
+
+            const SizedBox(height: 10),
+
+            // Search input field
+            Field(
+              value: query,
+              onChange: (v) => setState(() => query = v),
+              placeholder: 'Search preferences…',
+              highlightVars: false,
+            ),
+
+            const SizedBox(height: 12),
+
+            // 2. Active Category Content Area
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (!searching) ...[
+                      Row(
+                        children: [
+                          Icon(section.icon, size: 16, color: p.accent),
+                          const SizedBox(width: 8),
+                          T(section.label, size: 13.5, weight: FontWeight.w700),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      T(section.blurb, color: p.muted, size: 11.5),
+                      const SizedBox(height: 12),
+                    ] else ...[
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: T(
                           shown.isEmpty
                               ? 'No settings match “$q”.'
                               : '${shown.length} setting${shown.length == 1 ? '' : 's'} matching “$q”',
                           color: p.muted,
-                          size: 13,
+                          size: 12,
                         ),
-                      for (final e in groups.entries) ...[
-                        if (searching) SectionLabel(e.key.label.toUpperCase()),
-                        // The fill paints over the 1px border, which therefore stays visible.
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: CustomPaint(
-                            painter: _BorderThenFill(
-                              border: p.border,
-                              fill: p.field.withValues(alpha: 0.5),
-                              radius: 10,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                for (var i = 0; i < e.value.length; i++) ...[
-                                  if (i > 0)
-                                    Container(height: 1, color: p.border),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                      vertical: 12,
-                                    ),
-                                    child: Row(
-                                      spacing: 16,
-                                      children: [
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            spacing: 2,
-                                            children: [
-                                              T(
-                                                e.value[i].title,
-                                                weight: FontWeight.w600,
-                                              ),
-                                              if (e.value[i].desc
-                                                  .trim()
-                                                  .isNotEmpty)
-                                                T(
-                                                  e.value[i].desc,
-                                                  color:
-                                                      e.value[i].descColor ??
-                                                      p.muted,
-                                                  size: 12,
-                                                  mono:
-                                                      e.key == _Section.Data &&
-                                                      e.value[i].title ==
-                                                          'Storage location',
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                        e.value[i].control,
-                                      ],
-                                    ),
+                      ),
+                    ],
+
+                    for (final e in groups.entries) ...[
+                      if (searching)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8, bottom: 6),
+                          child: SectionLabel(e.key.label.toUpperCase()),
+                        ),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: CustomPaint(
+                          painter: _BorderThenFill(
+                            border: p.border,
+                            fill: p.field.withValues(alpha: 0.5),
+                            radius: 10,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              for (var i = 0; i < e.value.length; i++) ...[
+                                if (i > 0)
+                                  Container(height: 1, color: p.border),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 12,
                                   ),
-                                ],
+                                  child: Row(
+                                    spacing: 16,
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          spacing: 2,
+                                          children: [
+                                            T(
+                                              e.value[i].title,
+                                              weight: FontWeight.w600,
+                                              size: 12.5,
+                                            ),
+                                            if (e.value[i].desc
+                                                .trim()
+                                                .isNotEmpty)
+                                              T(
+                                                e.value[i].desc,
+                                                color:
+                                                    e.value[i].descColor ??
+                                                    p.muted,
+                                                size: 11.5,
+                                                mono:
+                                                    e.key == _Section.Data &&
+                                                    e.value[i].title ==
+                                                        'Storage location',
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                      e.value[i].control,
+                                    ],
+                                  ),
+                                ),
                               ],
-                            ),
+                            ],
                           ),
                         ),
-                      ],
+                      ),
+                      const SizedBox(height: 12),
                     ],
-                  ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

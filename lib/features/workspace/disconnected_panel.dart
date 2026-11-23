@@ -4,7 +4,7 @@ import 'package:rocket_mcp/app/mcp_session.dart';
 import 'package:rocket_mcp/app/modal.dart';
 import 'package:rocket_mcp/components/buttons.dart';
 import 'package:rocket_mcp/components/empty_state.dart';
-import 'package:rocket_mcp/components/mini_spinner.dart';
+import 'package:rocket_mcp/components/state_graphic.dart';
 import 'package:rocket_mcp/components/text.dart';
 import 'package:rocket_mcp/core/mcp/model.dart';
 import 'package:rocket_mcp/theme/icons.dart';
@@ -33,7 +33,7 @@ class DisconnectedPanel extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           spacing: 12,
           children: [
-            const MiniSpinner(size: 28),
+            const StateGraphic(type: StateGraphicType.connecting),
             const T('Connecting…', size: 15, weight: FontWeight.w600),
             T(
               'Starting ${server.name} and loading its tools, resources and prompts.',
@@ -44,7 +44,7 @@ class DisconnectedPanel extends StatelessWidget {
         ),
       ),
       McpServerStatus.error => EmptyState(
-        icon: Ic.error,
+        graphic: const StateGraphic.error(),
         title: 'Could not connect',
         message: session.statusError ?? 'The connection failed.',
         actions: [
@@ -63,7 +63,7 @@ class DisconnectedPanel extends StatelessWidget {
         ],
       ),
       _ => EmptyState(
-        icon: Ic.disconnect,
+        graphic: const StateGraphic.disconnected(),
         title: 'Not connected',
         message:
             'Connect to ${server.name} to browse its tools, resources and prompts.',

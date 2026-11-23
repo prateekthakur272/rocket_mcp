@@ -118,7 +118,7 @@ class TileBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.pal;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(
         color: p.muted.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(4),

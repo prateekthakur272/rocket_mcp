@@ -1,0 +1,7 @@
+app_id: 8C79326D-78F9-417F-9C1C-E73F22DF6B35
+publisher_name: Prateek Thakur
+publisher_url: https://github.com/prateekthakur272/rocket_mcp
+display_name: Rocket MCP
+executable_name: rocket_mcp.exe
+create_desktop_icon: true
+setup_icon_file: windows/runner/resources/app_icon.ico

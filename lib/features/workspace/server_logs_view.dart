@@ -65,6 +65,9 @@ class _ServerLogsViewState extends State<ServerLogsView> {
                   value: _filter,
                   onChange: (v) => setState(() => _filter = v),
                   placeholder: 'Filter logs…',
+                  prefixIcon: Ic.search,
+                  clearable: true,
+                  highlightVars: false,
                 ),
               ),
               Btn(
@@ -98,14 +101,14 @@ class _ServerLogsViewState extends State<ServerLogsView> {
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 4,
-                              vertical: 1,
+                              horizontal: 8,
+                              vertical: 2.5,
                             ),
                             decoration: BoxDecoration(
                               color: item.level == McpLogLevel.error
                                   ? p.err.withValues(alpha: 0.15)
                                   : p.muted.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(3),
+                              borderRadius: BorderRadius.circular(4),
                             ),
                             child: T(
                               item.type,

@@ -5,13 +5,14 @@ import 'package:rocket_mcp/app/mcp_session.dart';
 import 'package:rocket_mcp/app/modal.dart';
 import 'package:rocket_mcp/app/title_menu_state.dart';
 import 'package:rocket_mcp/core/mcp/model.dart';
+import 'package:rocket_mcp/core/mcp/transports.dart';
 import 'package:rocket_mcp/core/model/app_settings.dart';
 import 'package:rocket_mcp/core/storage/app_store.dart';
 import 'package:rocket_mcp/core/storage/server_store.dart';
 
 /// The single owner of application state: settings, dialogs, MCP servers and sessions.
 class AppState extends ChangeNotifier {
-  AppState({List<McpServerConfig>? initialServers}) {
+  AppState({List<McpServerConfig>? initialServers, this.transportFactory}) {
     titleMenu.addListener(notifyListeners);
     settings = AppStore.loadSettings();
     final layout = AppStore.loadLayout();
@@ -34,7 +35,20 @@ class AppState extends ChangeNotifier {
     if (_servers.isNotEmpty) {
       _activeServerId = _servers.first.id;
     }
+
+    // Launch initial onboarding tour on first run
+    if (AppStore.needsOnboarding) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_modal == null) {
+          modal = const ModalOnboarding();
+        }
+      });
+    }
   }
+
+  /// Supplies the transport a server connects through, instead of the one its configuration describes. Tests and the
+  /// documentation screenshots use it to talk to an in-memory demo server; the app leaves it null.
+  final McpTransport? Function(McpServerConfig server)? transportFactory;
 
   static const double minSidebarWidth = 0.12;
   static const double maxSidebarWidth = 0.45;
@@ -148,7 +162,10 @@ class AppState extends ChangeNotifier {
   McpSession? getSession(String id) => _sessions[id];
 
   void _initSession(McpServerConfig server) {
-    final session = McpSession(config: server);
+    final session = McpSession(
+      config: server,
+      transportOverride: transportFactory?.call(server),
+    );
     session.addListener(notifyListeners);
     _sessions[server.id] = session;
     if (server.autoConnect) {

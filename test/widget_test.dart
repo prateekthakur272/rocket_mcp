@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:material_ui/material_ui.dart' show Material, MaterialApp;
 import 'package:flutter_test/flutter_test.dart';
@@ -96,6 +97,50 @@ void main() {
         isMac: false,
       ).expand((m) => m.items).whereType<MenuItemSpec>().map((i) => i.label);
       expect(labels, containsAll(['Exit', 'Preferences…', 'About Rocket MCP']));
+    });
+
+    test('Includes standard Edit and View menus with shortcuts', () {
+      final menus = AppMenus.build(AppState(), isMac: true);
+      final menuNames = menus.map((m) => m.label).toList();
+      expect(
+        menuNames,
+        containsAll(['File', 'Edit', 'View', 'Server', 'Window', 'Help']),
+      );
+
+      final editItems = menus
+          .firstWhere((m) => m.label == 'Edit')
+          .items
+          .whereType<MenuItemSpec>()
+          .map((i) => i.label)
+          .toList();
+      expect(
+        editItems,
+        containsAll(['Undo', 'Redo', 'Cut', 'Copy', 'Paste', 'Select All']),
+      );
+
+      final viewSubmenus = menus
+          .firstWhere((m) => m.label == 'View')
+          .items
+          .whereType<SubMenuSpec>()
+          .map((s) => s.label)
+          .toList();
+      expect(viewSubmenus, contains('Switch Workspace Tab'));
+    });
+
+    test('Shortcut labels adapt appropriately for Mac and Windows/Linux', () {
+      const undoMac = Shortcut(LogicalKeyboardKey.keyZ);
+      expect(undoMac.label(true), '⌘Z');
+      expect(undoMac.label(false), 'Ctrl+Z');
+
+      const redoWin = Shortcut(LogicalKeyboardKey.keyY);
+      expect(redoWin.label(false), 'Ctrl+Y');
+
+      const tabSwitch = Shortcut(LogicalKeyboardKey.digit1);
+      expect(tabSwitch.label(true), '⌘1');
+      expect(tabSwitch.label(false), 'Ctrl+1');
+
+      const helpWin = Shortcut(LogicalKeyboardKey.f1, primary: false);
+      expect(helpWin.label(false), 'F1');
     });
   });
 

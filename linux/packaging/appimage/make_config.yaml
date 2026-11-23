@@ -1,0 +1,13 @@
+display_name: Rocket MCP
+icon: linux/runner/resources/icon.png
+generic_name: MCP Testing Client
+categories:
+  - Development
+  - Utility
+keywords:
+  - mcp
+  - model-context-protocol
+  - ai
+  - llm
+  - testing
+startup_notify: true

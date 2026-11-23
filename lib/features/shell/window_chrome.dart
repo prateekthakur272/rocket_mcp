@@ -17,6 +17,7 @@ class WindowChrome {
     this.controls,
     this.dragArea = _identity,
     this.onDoubleClick,
+    this.onToggleMaximize,
     this.inlineMenus = false,
     this.onQuit = _noop,
     this.onMinimize = _noop,
@@ -26,6 +27,7 @@ class WindowChrome {
   final Widget? controls;
   final Widget Function(Widget content) dragArea;
   final VoidCallback? onDoubleClick;
+  final VoidCallback? onToggleMaximize;
 
   /// Draw the menu bar inside the title bar (Windows / Linux), instead of the operating system's.
   final bool inlineMenus;
@@ -62,6 +64,7 @@ class WindowChrome {
       child: content,
     ),
     onDoubleClick: onToggleMaximize,
+    onToggleMaximize: onToggleMaximize,
     inlineMenus: !isMac,
     onQuit: isMac ? _noop : onClose,
     onMinimize: isMac ? _noop : onMinimize,

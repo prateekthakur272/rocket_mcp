@@ -33,11 +33,12 @@ class _FooterBtn extends StatelessWidget {
     final p = context.pal;
     return HoverBuilder(
       indicate: true,
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(5),
       cursor: SystemMouseCursors.click,
       onTap: onClick,
       builder: (ctx, hov) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 3),
+        height: 26,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
           color: hov ? p.hover : const Color(0x00000000),
           borderRadius: BorderRadius.circular(5),
@@ -45,14 +46,14 @@ class _FooterBtn extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
+          spacing: 4,
           children: [
             Ico(icon, tint: hov ? p.accent : p.muted, size: 13),
-            const SizedBox(width: 3),
             Flexible(
               child: T(
                 label,
                 color: hov ? p.text : p.muted,
-                size: 11.5,
+                size: 11,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -75,6 +76,15 @@ class SidebarView extends StatefulWidget {
 
 class _SidebarViewState extends State<SidebarView> {
   String _filter = '';
+
+  /// Shared by the list and its scrollbar: on desktop a list has no primary controller for the scrollbar to find.
+  final ScrollController _scroll = ScrollController();
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
 
   AppState get state => widget.state;
 
@@ -110,38 +120,13 @@ class _SidebarViewState extends State<SidebarView> {
               spacing: 2,
               children: [
                 Expanded(
-                  child: Container(
-                    height: 34,
-                    padding: const EdgeInsets.only(left: 8),
-                    decoration: BoxDecoration(
-                      color: p.field,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    foregroundDecoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: p.border, width: 1),
-                    ),
-                    child: Row(
-                      children: [
-                        Ico(Ic.search, tint: p.muted, size: 15),
-                        Expanded(
-                          child: Field(
-                            value: _filter,
-                            onChange: (v) => setState(() => _filter = v),
-                            placeholder: 'Filter servers…',
-                            bordered: false,
-                            highlightVars: false,
-                          ),
-                        ),
-                        if (_filter.isNotEmpty)
-                          IconBtn(
-                            icon: Ic.close,
-                            onClick: () => setState(() => _filter = ''),
-                            size: 12,
-                            boxSize: 20,
-                          ),
-                      ],
-                    ),
+                  child: Field(
+                    value: _filter,
+                    onChange: (v) => setState(() => _filter = v),
+                    placeholder: 'Filter servers…',
+                    prefixIcon: Ic.search,
+                    clearable: true,
+                    highlightVars: false,
                   ),
                 ),
               ],
@@ -239,7 +224,9 @@ class _SidebarViewState extends State<SidebarView> {
                       ),
                     ),
                     child: Scrollbar(
+                      controller: _scroll,
                       child: ListView.builder(
+                        controller: _scroll,
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         itemCount: filtered.length,
                         itemBuilder: (context, i) {

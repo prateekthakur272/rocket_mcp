@@ -81,6 +81,9 @@ final class AppStore {
   static bool isFirstRun() =>
       !File(_settingsFile).existsSync() && !File(_layoutFile).existsSync();
 
+  /// True when the user hasn't completed or dismissed the onboarding tour yet.
+  static bool get needsOnboarding => flag('onboarding_completed') != true;
+
   static AppSettings loadSettings() {
     final json = _readJson(_settingsFile);
     return json == null ? const AppSettings() : AppSettings.fromJson(json);

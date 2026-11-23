@@ -2,25 +2,57 @@ import 'package:flutter/widgets.dart';
 import 'package:material_ui/material_ui.dart' show SelectableText;
 import 'package:rocket_mcp/app/app_state.dart';
 import 'package:rocket_mcp/app/mcp_session.dart';
-import 'package:rocket_mcp/components/resizable_pane.dart';
 import 'package:rocket_mcp/components/buttons.dart';
 import 'package:rocket_mcp/components/empty_state.dart';
 import 'package:rocket_mcp/components/field.dart';
-import 'package:rocket_mcp/features/workspace/list_empty_state.dart';
 import 'package:rocket_mcp/components/item_tile.dart';
+import 'package:rocket_mcp/components/resizable_pane.dart';
 import 'package:rocket_mcp/components/text.dart';
 import 'package:rocket_mcp/core/mcp/model.dart';
+import 'package:rocket_mcp/features/workspace/list_empty_state.dart';
+import 'package:rocket_mcp/platform/platform.dart';
 import 'package:rocket_mcp/theme/icons.dart';
 import 'package:rocket_mcp/theme/theme.dart';
 
 /// Interactive viewer and tester for MCP prompts.
-class PromptRunnerView extends StatelessWidget {
+class PromptRunnerView extends StatefulWidget {
   const PromptRunnerView({super.key, required this.session});
   final McpSession session;
 
   @override
+  State<PromptRunnerView> createState() => _PromptRunnerViewState();
+}
+
+class _PromptRunnerViewState extends State<PromptRunnerView> {
+  @override
+  void initState() {
+    super.initState();
+    widget.session.addListener(_onSessionChanged);
+  }
+
+  @override
+  void didUpdateWidget(PromptRunnerView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.session != oldWidget.session) {
+      oldWidget.session.removeListener(_onSessionChanged);
+      widget.session.addListener(_onSessionChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.session.removeListener(_onSessionChanged);
+    super.dispose();
+  }
+
+  void _onSessionChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
     final p = context.pal;
+    final session = widget.session;
     final prompts = session.prompts;
     final selectedPrompt = session.selectedPrompt;
 
@@ -198,12 +230,26 @@ class PromptRunnerView extends StatelessWidget {
                                         color: p.muted,
                                       ),
                                     Field(
+                                      key: ValueKey(
+                                        '${selectedPrompt.name}_${arg.name}',
+                                      ),
+                                      prefixIcon: Ic.variables,
+                                      clearable: true,
+                                      placeholder: 'Enter ${arg.name}…',
                                       value:
                                           session.promptArguments[arg.name] ??
                                           '',
-                                      onChange: (v) =>
-                                          session.promptArguments[arg.name] = v,
-                                      placeholder: 'Enter ${arg.name}…',
+                                      onChange: (v) {
+                                        setState(() {
+                                          session.promptArguments[arg.name] = v;
+                                        });
+                                      },
+                                      onEnter:
+                                          !session.isLoadingPrompt &&
+                                              session.status ==
+                                                  McpServerStatus.connected
+                                          ? session.fetchPrompt
+                                          : null,
                                     ),
                                   ],
                                 ),
@@ -232,28 +278,52 @@ class PromptRunnerView extends StatelessWidget {
                                         CrossAxisAlignment.start,
                                     spacing: 6,
                                     children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 2,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: msg.role == 'assistant'
-                                              ? p.accent.withValues(alpha: 0.15)
-                                              : p.muted.withValues(alpha: 0.15),
-                                          borderRadius: BorderRadius.circular(
-                                            4,
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: msg.role == 'assistant'
+                                                  ? p.accent.withValues(
+                                                      alpha: 0.15,
+                                                    )
+                                                  : p.muted.withValues(
+                                                      alpha: 0.15,
+                                                    ),
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                            ),
+                                            child: T(
+                                              msg.role.toUpperCase(),
+                                              size: 10,
+                                              mono: true,
+                                              weight: FontWeight.w700,
+                                              color: msg.role == 'assistant'
+                                                  ? p.accent
+                                                  : p.text,
+                                            ),
                                           ),
-                                        ),
-                                        child: T(
-                                          msg.role.toUpperCase(),
-                                          size: 10,
-                                          mono: true,
-                                          weight: FontWeight.w700,
-                                          color: msg.role == 'assistant'
-                                              ? p.accent
-                                              : p.text,
-                                        ),
+                                          const Spacer(),
+                                          IconBtn(
+                                            icon: Ic.copy,
+                                            size: 13,
+                                            boxSize: 22,
+                                            tooltip: 'Copy message text',
+                                            onClick: () {
+                                              final text =
+                                                  msg.content.text ??
+                                                  msg.content.data ??
+                                                  '';
+                                              Platform.copy(text);
+                                              AppScope.read(context).showToast(
+                                                'Copied to clipboard',
+                                              );
+                                            },
+                                          ),
+                                        ],
                                       ),
                                       SelectableText(
                                         msg.content.text ??

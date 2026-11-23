@@ -8,18 +8,21 @@ class Shortcut {
     this.primary = true,
     this.shift = false,
     this.control = false,
+    this.alt = false,
   });
 
   final LogicalKeyboardKey key;
   final bool primary;
   final bool shift;
   final bool control;
+  final bool alt;
 
   SingleActivator toActivator(bool isMac) => SingleActivator(
     key,
     control: control || (primary && !isMac),
     meta: primary && isMac,
     shift: shift,
+    alt: alt,
   );
 
   /// As shown in a menu: ⌘⇧S on a Mac, Ctrl+Shift+S elsewhere.
@@ -33,23 +36,37 @@ class Shortcut {
       k = isMac ? '+' : '=';
     } else if (key == LogicalKeyboardKey.minus) {
       k = '−';
-    } else if (key == LogicalKeyboardKey.digit0) {
-      k = '0';
     } else if (key == LogicalKeyboardKey.tab) {
       k = isMac ? '⇥' : 'Tab';
+    } else if (key == LogicalKeyboardKey.bracketLeft) {
+      k = '[';
+    } else if (key == LogicalKeyboardKey.bracketRight) {
+      k = ']';
+    } else if (key == LogicalKeyboardKey.slash) {
+      k = '/';
     } else {
       final l = key.keyLabel;
-      k = (l.length == 1 && RegExp(r'[A-Za-z]').hasMatch(l))
-          ? l.toUpperCase()
-          : '?';
+      if (l.isNotEmpty && RegExp(r'^[A-Za-z0-9]$').hasMatch(l)) {
+        k = l.toUpperCase();
+      } else if (l.startsWith('F') && RegExp(r'^F\d{1,2}$').hasMatch(l)) {
+        k = l;
+      } else {
+        k = l.isNotEmpty ? l : '?';
+      }
     }
     if (isMac) {
       return (control ? '⌃' : '') +
+          (alt ? '⌥' : '') +
           (shift ? '⇧' : '') +
           (primary ? '⌘' : '') +
           k;
     }
-    return [if (primary || control) 'Ctrl', if (shift) 'Shift', k].join('+');
+    return [
+      if (primary || control) 'Ctrl',
+      if (alt) 'Alt',
+      if (shift) 'Shift',
+      k,
+    ].join('+');
   }
 }
 

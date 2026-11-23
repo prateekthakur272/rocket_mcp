@@ -76,11 +76,15 @@ class JsonTree extends StatefulWidget {
     required this.root,
     this.expandSignal = 0,
     required this.onCopy,
+    this.borderRadius = const BorderRadius.all(Radius.circular(5)),
+    this.bordered = true,
   });
 
   final dynamic root;
   final int expandSignal;
   final void Function(String, String) onCopy;
+  final BorderRadius? borderRadius;
+  final bool bordered;
 
   @override
   State<JsonTree> createState() => _JsonTreeState();
@@ -130,16 +134,22 @@ class _JsonTreeState extends State<JsonTree> {
     final p = context.pal;
     final rows = _flatten(widget.root, expanded);
     return Container(
-      clipBehavior: Clip.antiAlias,
+      clipBehavior:
+          (widget.borderRadius != null &&
+              widget.borderRadius != BorderRadius.zero)
+          ? Clip.antiAlias
+          : Clip.none,
       decoration: BoxDecoration(
         color: p.field,
-        borderRadius: BorderRadius.circular(5),
+        borderRadius: widget.borderRadius,
       ),
       // Border is painted over the content so it doesn't change the layout.
-      foregroundDecoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(5),
-        border: Border.all(color: p.border, width: 1),
-      ),
+      foregroundDecoration: widget.bordered
+          ? BoxDecoration(
+              borderRadius: widget.borderRadius,
+              border: Border.all(color: p.border, width: 1),
+            )
+          : null,
       child: overlayScrollbarTheme(
         Scrollbar(
           controller: _sc,
@@ -183,35 +193,55 @@ class _JsonTreeState extends State<JsonTree> {
                         T(':', color: p.muted, mono: true, size: 12),
                       ],
                       ..._valueWidgets(p, n, open),
-                      const Spacer(),
-                      if (hov) ...[
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 260),
-                          child: T(
-                            n.path,
-                            color: p.muted.withValues(alpha: 0.7),
-                            mono: true,
-                            size: 10,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        IconBtn(
-                          icon: Ic.link,
-                          onClick: () => widget.onCopy(n.path, 'Copied path'),
-                          size: 13,
-                        ),
-                        IconBtn(
-                          icon: Ic.copy,
-                          onClick: () => widget.onCopy(
-                            n.value is String
-                                ? n.value as String
-                                : Json.stringify(n.value, pretty: true),
-                            'Copied value',
-                          ),
-                          size: 13,
-                        ),
-                      ],
+                      Expanded(
+                        child: hov
+                            ? ClipRect(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  spacing: 4,
+                                  children: [
+                                    Flexible(
+                                      child: ConstrainedBox(
+                                        constraints: const BoxConstraints(
+                                          maxWidth: 260,
+                                        ),
+                                        child: T(
+                                          n.path,
+                                          color: p.muted.withValues(alpha: 0.7),
+                                          mono: true,
+                                          size: 10,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ),
+                                    IconBtn(
+                                      icon: Ic.link,
+                                      onClick: () =>
+                                          widget.onCopy(n.path, 'Copied path'),
+                                      size: 13,
+                                      boxSize: 20,
+                                    ),
+                                    IconBtn(
+                                      icon: Ic.copy,
+                                      onClick: () => widget.onCopy(
+                                        n.value is String
+                                            ? n.value as String
+                                            : Json.stringify(
+                                                n.value,
+                                                pretty: true,
+                                              ),
+                                        'Copied value',
+                                      ),
+                                      size: 13,
+                                      boxSize: 20,
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
                     ],
                   ),
                 ),
@@ -227,21 +257,29 @@ class _JsonTreeState extends State<JsonTree> {
     final v = n.value;
     if (v is Map) {
       return [
-        T(
-          open ? '{' : '{ … }  ${n.size} ${n.size == 1 ? "key" : "keys"}',
-          color: p.muted,
-          mono: true,
-          size: 12,
+        Flexible(
+          child: T(
+            open ? '{' : '{ … }  ${n.size} ${n.size == 1 ? "key" : "keys"}',
+            color: p.muted,
+            mono: true,
+            size: 12,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ];
     }
     if (v is List) {
       return [
-        T(
-          open ? '[' : '[ … ]  ${n.size} ${n.size == 1 ? "item" : "items"}',
-          color: p.muted,
-          mono: true,
-          size: 12,
+        Flexible(
+          child: T(
+            open ? '[' : '[ … ]  ${n.size} ${n.size == 1 ? "item" : "items"}',
+            color: p.muted,
+            mono: true,
+            size: 12,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ];
     }
@@ -261,20 +299,28 @@ class _JsonTreeState extends State<JsonTree> {
     }
     if (v is bool || v == null) {
       return [
-        T(
-          v?.toString() ?? 'null',
-          color: p.syntaxKeyword,
-          mono: true,
-          size: 12,
+        Flexible(
+          child: T(
+            v?.toString() ?? 'null',
+            color: p.syntaxKeyword,
+            mono: true,
+            size: 12,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ];
     }
     return [
-      T(
-        Json.str(v) ?? v.toString(),
-        color: p.syntaxNumber,
-        mono: true,
-        size: 12,
+      Flexible(
+        child: T(
+          Json.str(v) ?? v.toString(),
+          color: p.syntaxNumber,
+          mono: true,
+          size: 12,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
     ];
   }

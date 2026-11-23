@@ -78,10 +78,13 @@ class _TrafficPacketViewState extends State<TrafficPacketView> {
                 overflow: TextOverflow.ellipsis,
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 2.5,
+                ),
                 decoration: BoxDecoration(
                   color: p.muted.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(3),
+                  borderRadius: BorderRadius.circular(4),
                 ),
                 child: T(
                   entry.direction == McpMessageDirection.outgoing

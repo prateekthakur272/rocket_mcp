@@ -42,3 +42,8 @@ class ModalServerConfig extends Modal {
 class ModalImportExport extends Modal {
   const ModalImportExport();
 }
+
+/// First-time onboarding walkthrough tour.
+class ModalOnboarding extends Modal {
+  const ModalOnboarding();
+}

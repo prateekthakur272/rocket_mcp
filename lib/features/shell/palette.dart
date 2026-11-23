@@ -140,6 +140,10 @@ class _PaletteState extends State<Palette> {
       state.prefsSection = 'Shortcuts';
       state.modal = const ModalSettings();
     });
+    act(
+      'Welcome & Onboarding Tour…',
+      () => state.modal = const ModalOnboarding(),
+    );
     act('Developer…', () => state.modal = const ModalDeveloper());
     act(
       'Report an issue',

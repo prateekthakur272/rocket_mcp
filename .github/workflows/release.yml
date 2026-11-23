@@ -1,0 +1,209 @@
+name: Release
+
+# Pushing a tag like v1.0.0 builds every platform and publishes a GitHub Release.
+# Run it by hand (Actions > Release > Run workflow) to build the installers without publishing.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: "3.50.0"
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read the version from pubspec.yaml
+        id: version
+        run: |
+          version=$(grep -E '^version:' pubspec.yaml | sed -E 's/version: *([^+ ]+).*/\1/')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "pubspec version: $version"
+
+      - name: Check the tag matches the pubspec version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          # A pre-release suffix on the tag (v1.0.0-beta.1) is allowed; the numeric part must match.
+          if [ "${tag%%-*}" != "${{ steps.version.outputs.version }}" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match pubspec version ${{ steps.version.outputs.version }}"
+            exit 1
+          fi
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test --timeout 60s
+
+  macos:
+    # fastforge builds Flutter's release app, which contains both arm64 and x86_64, so the same DMG and PKG run on
+    # Apple Silicon and Intel Macs. Its maker settings are in macos/packaging.
+    name: macOS (Apple Silicon + Intel)
+    needs: verify
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Install fastforge and appdmg
+        run: |
+          dart pub global activate fastforge
+          echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
+          npm install -g appdmg
+
+      - name: Build and package DMG and PKG
+        run: fastforge package --platform macos --targets dmg,pkg
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-universal
+          path: |
+            dist/*/*.dmg
+            dist/*/*.pkg
+          if-no-files-found: error
+
+  windows:
+    name: Windows x64
+    needs: verify
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Install fastforge and Inno Setup
+        shell: pwsh
+        run: |
+          dart pub global activate fastforge
+          "$env:LOCALAPPDATA\Pub\Cache\bin" | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
+          choco install innosetup --no-progress -y
+
+      - name: Build and package the installer and MSIX
+        shell: pwsh
+        run: |
+          # MSIX versions have four numbers: the pubspec version without a pre-release suffix, plus .0
+          $v = ("${{ needs.verify.outputs.version }}" -split '-')[0]
+          (Get-Content windows/packaging/msix/make_config.yaml) -replace '^msix_version:.*', "msix_version: $v.0" | Set-Content windows/packaging/msix/make_config.yaml
+          fastforge package --platform windows --targets exe,msix
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: |
+            dist/*/*.exe
+            dist/*/*.msix
+          if-no-files-found: error
+
+  linux:
+    name: Linux x64
+    needs: verify
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      # The runner has no FUSE; let appimagetool unpack itself instead.
+      APPIMAGE_EXTRACT_AND_RUN: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install Linux build and packaging dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev rpm patchelf locate
+          sudo curl -fsSL -o /usr/local/bin/appimagetool \
+            https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          sudo chmod +x /usr/local/bin/appimagetool
+
+      - run: flutter pub get
+
+      - name: Install fastforge
+        run: |
+          dart pub global activate fastforge
+          echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
+
+      - name: Build and package deb, rpm and AppImage
+        run: fastforge package --platform linux --targets deb,rpm,appimage
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-x64
+          path: |
+            dist/*/*.deb
+            dist/*/*.rpm
+            dist/*/*.AppImage
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    # Only a pushed version tag publishes; a manual run just leaves the build artifacts.
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [verify, macos, windows, linux]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Flatten and checksum
+        working-directory: dist
+        run: |
+          find . -mindepth 2 -type f -exec mv {} . \;
+          find . -mindepth 1 -type d -empty -delete
+          ls -l
+          sha256sum -- * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          prerelease: ${{ contains(github.ref_name, '-') }}

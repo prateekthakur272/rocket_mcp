@@ -77,8 +77,11 @@ class _BtnState extends State<Btn> {
     }
     final fontSize =
         widget.fontSize ??
-        (widget.height <= 24 ? 11.5 : (widget.height <= 28 ? 12.0 : 12.5));
-    final radius = BorderRadius.circular(6);
+        (widget.height <= 24 ? 11.0 : (widget.height <= 28 ? 11.5 : 12.5));
+    final radius = BorderRadius.circular(5);
+    final horizontalPadding = widget.height <= 26
+        ? 8.0
+        : (widget.height <= 28 ? 10.0 : 12.0);
     return MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.forbidden,
       onEnter: (_) => setState(() => _hov = true),
@@ -95,7 +98,7 @@ class _BtnState extends State<Btn> {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 100),
             height: widget.height,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
             decoration: BoxDecoration(color: bg, borderRadius: radius),
             // The border is painted over the content so it doesn't change the layout.
             foregroundDecoration: borderColor == null
@@ -116,14 +119,20 @@ class _BtnState extends State<Btn> {
                     Ico(
                       widget.icon!,
                       tint: fg,
-                      size: widget.height <= 24 ? 13 : 14,
+                      size: widget.height <= 24 ? 12 : 13.5,
                     ),
                   if (widget.label.isNotEmpty)
-                    T(
-                      widget.label,
-                      color: fg,
-                      size: fontSize,
-                      weight: FontWeight.w500,
+                    Flexible(
+                      child: T(
+                        widget.label,
+                        color: fg,
+                        size: fontSize,
+                        weight: widget.primary
+                            ? FontWeight.w600
+                            : FontWeight.w500,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                 ],
               ),
@@ -142,8 +151,8 @@ class IconBtn extends StatelessWidget {
     required this.icon,
     required this.onClick,
     this.color,
-    this.size = 16,
-    this.boxSize = 24,
+    this.size = 14,
+    this.boxSize = 26,
     this.active = false,
     this.tooltip,
   });
@@ -164,7 +173,7 @@ class IconBtn extends StatelessWidget {
     final button = Clickable(
       onClick: onClick,
       cursor: SystemMouseCursors.click,
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(5),
       child: HoverBuilder(
         builder: (ctx, hov) => Container(
           width: boxSize.toDouble(),
@@ -174,7 +183,7 @@ class IconBtn extends StatelessWidget {
             color: active
                 ? p.accent.withValues(alpha: 0.12)
                 : (hov ? p.hover : const Color(0x00000000)),
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(5),
           ),
           child: Ico(
             icon,

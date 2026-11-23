@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart' hide Chip;
+import 'package:rocket_mcp/components/buttons.dart' show IconBtn;
 import 'package:rocket_mcp/components/layout.dart';
 import 'package:rocket_mcp/components/overlay.dart';
 import 'package:rocket_mcp/components/text.dart';
@@ -182,6 +183,9 @@ class Field extends StatefulWidget {
     this.mono = false,
     this.password = false,
     this.bordered = true,
+    this.prefixIcon,
+    this.clearable = false,
+    this.height,
     this.onEnter,
     this.focusRequester,
     this.highlightVars = true,
@@ -195,6 +199,9 @@ class Field extends StatefulWidget {
   final bool mono;
   final bool password;
   final bool bordered;
+  final IconData? prefixIcon;
+  final bool clearable;
+  final double? height;
   final VoidCallback? onEnter;
 
   /// A focus node the caller can use to focus the field.
@@ -534,38 +541,67 @@ class _FieldState extends State<Field> {
         foregroundDecoration: widget.bordered
             ? BoxDecoration(
                 borderRadius: BorderRadius.circular(5),
-                border: Border.all(color: p.border, width: 1),
+                border: Border.all(
+                  color: focused ? p.accent : p.border,
+                  width: 1,
+                ),
               )
             : null,
-        constraints: const BoxConstraints(minHeight: CONTROL_H),
+        constraints: BoxConstraints(minHeight: widget.height ?? CONTROL_H),
         padding: const EdgeInsets.symmetric(horizontal: 8),
         alignment: Alignment.centerLeft,
-        child: TextField(
-          controller: _ctl,
-          focusNode: _focus,
-          style: style,
-          cursorColor: p.accent,
-          cursorRadius: Radius.zero,
-          cursorOpacityAnimates: false,
-          maxLines: 1,
-          obscureText: widget.password,
-          autocorrect: false,
-          enableSuggestions: false,
-          onTapOutside: (_) {},
-          decoration: InputDecoration(
-            isCollapsed: true,
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            filled: false,
-            contentPadding: EdgeInsets.zero,
-            hintText: widget.placeholder,
-            hintStyle: style.copyWith(
-              color: p.muted.withValues(alpha: 0.7),
-              letterSpacing: bodyLetterSpacing,
-              leadingDistribution: TextLeadingDistribution.even,
+        child: Row(
+          children: [
+            if (widget.prefixIcon != null) ...[
+              Ico(
+                widget.prefixIcon!,
+                size: 13,
+                tint: focused ? p.accent : p.muted,
+              ),
+              const SizedBox(width: 6),
+            ],
+            Expanded(
+              child: TextField(
+                controller: _ctl,
+                focusNode: _focus,
+                style: style,
+                cursorColor: p.accent,
+                cursorRadius: Radius.zero,
+                cursorOpacityAnimates: false,
+                maxLines: 1,
+                obscureText: widget.password,
+                autocorrect: false,
+                enableSuggestions: false,
+                onTapOutside: (_) {},
+                decoration: InputDecoration(
+                  isCollapsed: true,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  filled: false,
+                  contentPadding: EdgeInsets.zero,
+                  hintText: widget.placeholder,
+                  hintStyle: style.copyWith(
+                    color: p.muted.withValues(alpha: 0.7),
+                    letterSpacing: bodyLetterSpacing,
+                    leadingDistribution: TextLeadingDistribution.even,
+                  ),
+                ),
+              ),
             ),
-          ),
+            if (widget.clearable && _ctl.text.isNotEmpty) ...[
+              const SizedBox(width: 4),
+              IconBtn(
+                icon: Ic.close,
+                size: 11,
+                boxSize: 18,
+                onClick: () {
+                  _ctl.text = '';
+                  widget.onChange('');
+                },
+              ),
+            ],
+          ],
         ),
       ),
     );
@@ -827,6 +863,21 @@ class _AreaFieldState extends State<AreaField> {
   late final TextEditingController _c = TextEditingController(
     text: widget.value,
   );
+  FocusNode? _ownFocus;
+  FocusNode get _focus => widget.focusRequester ?? (_ownFocus ??= FocusNode());
+  bool _focused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focus.addListener(_onFocus);
+  }
+
+  void _onFocus() {
+    if (mounted && _focused != _focus.hasFocus) {
+      setState(() => _focused = _focus.hasFocus);
+    }
+  }
 
   @override
   void didUpdateWidget(AreaField old) {
@@ -841,6 +892,8 @@ class _AreaFieldState extends State<AreaField> {
 
   @override
   void dispose() {
+    _focus.removeListener(_onFocus);
+    _ownFocus?.dispose();
     _c.dispose();
     super.dispose();
   }
@@ -850,8 +903,8 @@ class _AreaFieldState extends State<AreaField> {
     final p = context.pal;
     final style = TextStyle(
       color: p.text,
-      fontSize: 13,
-      height: 18 / 13,
+      fontSize: 12.5,
+      height: 18 / 12.5,
       fontFamily: widget.mono ? monoFamily : null,
       fontFamilyFallback: widget.mono ? monoFallback : null,
     );
@@ -865,11 +918,11 @@ class _AreaFieldState extends State<AreaField> {
       ),
       foregroundDecoration: BoxDecoration(
         borderRadius: BorderRadius.circular(5),
-        border: Border.all(color: p.border, width: 1),
+        border: Border.all(color: _focused ? p.accent : p.border, width: 1),
       ),
       child: TextField(
         controller: _c,
-        focusNode: widget.focusRequester,
+        focusNode: _focus,
         style: style,
         cursorColor: p.accent,
         cursorRadius: Radius.zero,

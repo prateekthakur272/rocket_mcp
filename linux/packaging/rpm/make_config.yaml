@@ -1,0 +1,14 @@
+display_name: Rocket MCP
+package_name: rocket-mcp
+summary: Full-featured desktop client for testing Model Context Protocol (MCP) servers
+packager: Prateek Thakur
+packagerEmail: prateekthakur272@gmail.com
+url: https://github.com/prateekthakur272/rocket_mcp
+license: Unspecified
+description: Rocket MCP is a full-featured desktop client for testing Model Context Protocol (MCP) servers.
+icon: linux/runner/resources/icon.png
+generic_name: MCP Testing Client
+categories:
+  - Development
+  - Utility
+startup_notify: true

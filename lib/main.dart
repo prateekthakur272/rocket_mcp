@@ -363,8 +363,34 @@ class _RocketRootState extends State<RocketRoot>
         isMac: true,
         quit: quit,
         minimize: minimize,
+        toggleMaximize: () => unawaited(toggleMaximize()),
       ))
-        PlatformMenu(label: m.label, menus: groups(m.items)),
+        if (m.label == 'Window')
+          PlatformMenu(
+            label: 'Window',
+            menus: [
+              const PlatformMenuItemGroup(
+                members: [
+                  PlatformProvidedMenuItem(
+                    type: PlatformProvidedMenuItemType.minimizeWindow,
+                  ),
+                  PlatformProvidedMenuItem(
+                    type: PlatformProvidedMenuItemType.zoomWindow,
+                  ),
+                ],
+              ),
+              ...groups(m.items),
+              const PlatformMenuItemGroup(
+                members: [
+                  PlatformProvidedMenuItem(
+                    type: PlatformProvidedMenuItemType.arrangeWindowsInFront,
+                  ),
+                ],
+              ),
+            ],
+          )
+        else
+          PlatformMenu(label: m.label, menus: groups(m.items)),
     ];
   }
 

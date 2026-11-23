@@ -3,6 +3,7 @@ import 'package:rocket_mcp/app/app_state.dart';
 import 'package:rocket_mcp/app/modal.dart';
 import 'package:rocket_mcp/app/mcp_session.dart';
 import 'package:rocket_mcp/components/breadcrumb.dart';
+import 'package:rocket_mcp/components/buttons.dart';
 import 'package:rocket_mcp/components/modifiers.dart';
 import 'package:rocket_mcp/components/text.dart';
 import 'package:rocket_mcp/core/mcp/model.dart';
@@ -26,26 +27,15 @@ class _TopBtn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.pal;
-    return HoverBuilder(
-      indicate: true,
-      borderRadius: BorderRadius.circular(5),
-      cursor: SystemMouseCursors.click,
-      onTap: onClick,
-      builder: (ctx, hov) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
-        decoration: BoxDecoration(
-          color: hov ? p.hover : const Color(0x00000000),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          spacing: 5,
-          children: [
-            Ico(icon, tint: color ?? (hov ? p.text : p.muted), size: 14),
-            T(label, color: color ?? (hov ? p.text : p.muted), size: 12),
-          ],
-        ),
-      ),
+    final isDanger = color == p.err;
+    return Btn(
+      label: label,
+      icon: icon,
+      outlined: true,
+      height: 26,
+      fontSize: 11.5,
+      danger: isDanger,
+      onClick: onClick,
     );
   }
 }
@@ -117,10 +107,12 @@ class TopBar extends StatelessWidget {
             spacing: 4,
             children: [
               const Padding(
-                padding: EdgeInsets.only(right: 14),
+                padding: EdgeInsets.only(right: 12),
                 child: T(AppConfig.NAME, weight: FontWeight.w700, size: 15),
               ),
-              if (server != null && session != null)
+              if (server != null && session != null) ...[
+                Container(width: 1, height: 18, color: p.border),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Align(
                     alignment: Alignment.centerLeft,
@@ -159,8 +151,8 @@ class TopBar extends StatelessWidget {
                       ],
                     ),
                   ),
-                )
-              else
+                ),
+              ] else
                 const Spacer(),
               _TopBtn(
                 label: 'Presets',

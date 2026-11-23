@@ -266,6 +266,15 @@ class McpSession extends ChangeNotifier {
   /// True while the lists of tools, resources and prompts are first being fetched after connecting.
   bool get isDiscovering => _isDiscovering;
 
+  /// Refresh all server capabilities (tools, resources, prompts, ping).
+  Future<void> discover() async {
+    final c = _client;
+    if (c == null || !c.isConnected) return;
+    _isDiscovering = true;
+    notifyListeners();
+    await _discover(c);
+  }
+
   /// Fetches everything the server offers, all at once, as soon as the connection is up: the tools, resources and
   /// prompts it advertises, and a ping for the latency. A server that advertises none of them is asked for all three,
   /// since many only declare a few capabilities.

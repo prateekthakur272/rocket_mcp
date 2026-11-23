@@ -1,6 +1,7 @@
 // ignore_for_file: constant_identifier_names
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:material_ui/material_ui.dart' show Material, MaterialType;
 import 'package:rocket_mcp/components/buttons.dart';
 import 'package:rocket_mcp/components/drag_devices.dart';
 import 'package:rocket_mcp/components/modifiers.dart';
@@ -9,7 +10,7 @@ import 'package:rocket_mcp/theme/icons.dart';
 import 'package:rocket_mcp/theme/theme.dart';
 
 /// Height shared by buttons, dropdowns and single-line text fields.
-const double CONTROL_H = 32;
+const double CONTROL_H = 28;
 
 /// Horizontal tab strip.
 class Tabs extends StatelessWidget {
@@ -233,6 +234,138 @@ class ModalBox extends StatelessWidget {
                 ),
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Modal dialog scaffold matching modern DevSpace dialog style with customizable width, maxHeight, and actions.
+class ModalScaffold extends StatelessWidget {
+  const ModalScaffold({
+    super.key,
+    required this.title,
+    required this.child,
+    required this.onClose,
+    this.actions = const [],
+    this.width = 540,
+    this.maxHeight,
+  });
+
+  final String title;
+  final Widget child;
+  final VoidCallback onClose;
+  final List<Widget> actions;
+  final double width;
+  final double? maxHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.pal;
+    return Focus(
+      autofocus: true,
+      onKeyEvent: (node, e) {
+        if (e is KeyDownEvent && e.logicalKey == LogicalKeyboardKey.escape) {
+          onClose();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: ClickableNoRipple(
+        onClick: onClose,
+        child: Container(
+          color: const Color(0xFF000000).withValues(alpha: 0.5),
+          alignment: Alignment.center,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final maxScreenHeight = constraints.maxHeight;
+              final chromeHeight =
+                  48 + 48 + 32 + (actions.isNotEmpty ? 56 : 0) + 2;
+              final maxBodyHeight = (maxScreenHeight - chromeHeight).clamp(
+                80.0,
+                maxHeight != null
+                    ? (maxHeight! - chromeHeight + 48)
+                    : double.infinity,
+              );
+
+              return ClickableNoRipple(
+                onClick: () {},
+                child: Container(
+                  width: width,
+                  margin: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: p.panel,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: p.border, width: 1),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF000000).withValues(alpha: 0.35),
+                        blurRadius: 24,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        DrawBottomBorder(
+                          color: p.border,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: T(
+                                    title,
+                                    size: 14,
+                                    weight: FontWeight.w600,
+                                  ),
+                                ),
+                                IconBtn(
+                                  icon: Ic.close,
+                                  onClick: onClose,
+                                  size: 24,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        ConstrainedBox(
+                          constraints: BoxConstraints(maxHeight: maxBodyHeight),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: child,
+                          ),
+                        ),
+                        if (actions.isNotEmpty)
+                          DrawTopBorder(
+                            color: p.border,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                spacing: 8,
+                                children: actions,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),

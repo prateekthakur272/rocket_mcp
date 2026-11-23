@@ -67,7 +67,8 @@ class _ServerRowState extends State<ServerRow> {
   @override
   Widget build(BuildContext context) {
     final p = context.pal;
-    final showActions = _hovered || _menuOpen;
+    final showActions =
+        _hovered || _menuOpen || _status == McpServerStatus.connecting;
     final background = widget.selected
         ? p.selected
         : (_hovered ? p.hover : const Color(0x00000000));
@@ -172,8 +173,9 @@ class _ServerRowState extends State<ServerRow> {
         onClick: widget.onConnect,
       ),
     IconBtn(
-      icon: Ic.more,
+      icon: Ic.moreVert,
       size: _actionIconSize,
+      tooltip: 'More actions',
       onClick: () => setState(() => _menuOpen = true),
     ),
   ];
@@ -233,8 +235,6 @@ class _Details extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.pal;
-    final session = row.session;
-    final connected = session?.status == McpServerStatus.connected;
     final address = isStdio
         ? (row.server.command.isNotEmpty ? row.server.command : 'local process')
         : row.server.url;
@@ -255,51 +255,21 @@ class _Details extends StatelessWidget {
           spacing: 5,
           children: [
             _TransportPill(transport: row.server.transport),
-            if (connected && session != null)
-              ..._capabilities(session, p)
-            else
-              Expanded(
-                child: T(
-                  address,
-                  color: p.muted,
-                  size: 10,
-                  lineHeight: 1.3,
-                  mono: true,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+            Expanded(
+              child: T(
+                address,
+                color: p.muted,
+                size: 10,
+                lineHeight: 1.3,
+                mono: true,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
+            ),
           ],
         ),
       ],
     );
-  }
-
-  List<Widget> _capabilities(McpSession session, Pal p) {
-    final resources =
-        session.resources.length + session.resourceTemplates.length;
-    final latency = session.pingLatency;
-    return [
-      _CountChip(icon: Ic.tool, count: session.tools.length, color: p.accent),
-      if (resources > 0)
-        _CountChip(icon: Ic.resource, count: resources, color: p.muted),
-      if (session.prompts.isNotEmpty)
-        _CountChip(
-          icon: Ic.prompt,
-          count: session.prompts.length,
-          color: p.muted,
-        ),
-      const Spacer(),
-      if (latency != null)
-        T(
-          '${latency.inMilliseconds}ms',
-          size: 10,
-          lineHeight: 1.3,
-          mono: true,
-          color: p.ok,
-          weight: FontWeight.w600,
-        ),
-    ];
   }
 }
 
@@ -334,33 +304,4 @@ class _TransportPill extends StatelessWidget {
       ),
     );
   }
-}
-
-class _CountChip extends StatelessWidget {
-  const _CountChip({
-    required this.icon,
-    required this.count,
-    required this.color,
-  });
-
-  final IconData icon;
-  final int count;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    spacing: 2,
-    children: [
-      Ico(icon, size: 11, tint: color),
-      T(
-        '$count',
-        size: 10,
-        lineHeight: 1.3,
-        mono: true,
-        weight: FontWeight.w600,
-        color: color,
-      ),
-    ],
-  );
 }

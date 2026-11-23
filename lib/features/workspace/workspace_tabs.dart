@@ -31,27 +31,20 @@ class WorkspaceTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.pal;
-    return Container(
-      decoration: BoxDecoration(
-        color: p.panel,
-        border: Border(bottom: BorderSide(color: p.border)),
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          spacing: 2,
-          children: [
-            for (final tab in WorkspaceTab.values)
-              _TabButton(
-                icon: _icons[tab]!,
-                label: tab.label,
-                count: _count(tab),
-                selected: tab == session.activeTab,
-                onTap: () => session.activeTab = tab,
-              ),
-          ],
-        ),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        spacing: 2,
+        children: [
+          for (final tab in WorkspaceTab.values)
+            _TabButton(
+              icon: _icons[tab]!,
+              label: tab.label,
+              count: _count(tab),
+              selected: tab == session.activeTab,
+              onTap: () => session.activeTab = tab,
+            ),
+        ],
       ),
     );
   }
@@ -81,8 +74,8 @@ class _TabButton extends StatelessWidget {
       builder: (context, hovered) {
         final color = selected ? p.text : (hovered ? p.text : p.muted);
         return Container(
-          height: 38,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          height: 36,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
           decoration: BoxDecoration(
             color: hovered && !selected ? p.hover : const Color(0x00000000),
             border: Border(
@@ -96,11 +89,11 @@ class _TabButton extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             spacing: 6,
             children: [
-              Ico(icon, size: 15, tint: selected ? p.accent : color),
+              Ico(icon, size: 14, tint: selected ? p.accent : color),
               T(
                 label,
                 color: color,
-                size: 12.5,
+                size: 12,
                 weight: selected ? FontWeight.w600 : FontWeight.w500,
               ),
               if (count != null && count! > 0)
@@ -117,7 +110,7 @@ class _TabButton extends StatelessWidget {
                   ),
                   child: T(
                     '$count',
-                    size: 10,
+                    size: 9.5,
                     lineHeight: 1.2,
                     mono: true,
                     weight: FontWeight.w600,

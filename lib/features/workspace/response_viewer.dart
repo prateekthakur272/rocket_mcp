@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:rocket_mcp/components/empty_state.dart';
 import 'package:rocket_mcp/components/icon_btn_group.dart';
-import 'package:rocket_mcp/components/header_bar.dart';
 import 'package:rocket_mcp/app/mcp_session.dart';
 import 'package:rocket_mcp/components/buttons.dart';
 import 'package:rocket_mcp/components/code_view.dart';
@@ -73,17 +72,18 @@ class _ResponseViewerState extends State<ResponseViewer> {
             color: p.panel,
             border: Border(bottom: BorderSide(color: p.border)),
           ),
-          child: HeaderBar(
-            leading: [
+          child: Row(
+            children: [
               Ico(Ic.history, tint: p.muted, size: 14),
+              const SizedBox(width: 8),
               const T(
                 'Response',
                 weight: FontWeight.w600,
                 size: 12,
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
               if (toolResult != null) ...[
+                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 6,
@@ -98,25 +98,24 @@ class _ResponseViewerState extends State<ResponseViewer> {
                   child: T(
                     toolResult.isError ? 'ERROR' : 'SUCCESS',
                     maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                     size: 10,
                     mono: true,
                     weight: FontWeight.w700,
                     color: toolResult.isError ? p.err : p.ok,
                   ),
                 ),
-                if (session.lastToolDurationMs != null)
+                if (session.lastToolDurationMs != null) ...[
+                  const SizedBox(width: 8),
                   T(
                     '${session.lastToolDurationMs}ms',
                     maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                     size: 11,
                     mono: true,
                     color: p.muted,
                   ),
+                ],
               ],
-            ],
-            trailing: [
+              const Spacer(),
               if (toolResult != null) ...[
                 ViewModeMenu(
                   current: _viewMode,
@@ -129,6 +128,7 @@ class _ResponseViewerState extends State<ResponseViewer> {
                   ],
                   onSelect: (m) => setState(() => _viewMode = m),
                 ),
+                const SizedBox(width: 8),
                 IconBtnGroup(
                   children: [
                     if (_viewMode == 'Tree') ...[
@@ -184,7 +184,6 @@ class _ResponseViewerState extends State<ResponseViewer> {
               ? const Center(child: T('Executing request…'))
               : (toolResult == null
                     ? const EmptyState(
-                        icon: Ic.send,
                         title: 'No response yet',
                         message: 'Run a tool, fetch a prompt or read a resource, and the output shows up here.',
                       )

@@ -1,0 +1,50 @@
+# Rocket MCP — marketplace listing.
+# Read by the marketplace from the default branch of this repo.
+# See the marketplace's sample/.marketplace/app-info.yaml for every field.
+
+name: Rocket MCP
+tagline: A desktop client for testing Model Context Protocol servers.
+
+description: |
+  Rocket MCP is a desktop workbench for Model Context Protocol (MCP)
+  servers. Connect to a local stdio process or a remote SSE or streamable
+  HTTP endpoint, and the moment it answers, its tools, resources and prompts
+  are fetched together so you can start testing straight away.
+
+  Every tool gets a real form built from its input schema: text fields,
+  numbers, switches, drop-downs and JSON editors, with required arguments
+  first. A warnings list shows what blocks a run and takes you to the field.
+  Prefer raw JSON? Use the editor, with live validation. Read resources and
+  fill in URI templates with a live resolved address, subscribe to changes,
+  and fetch prompts with their arguments.
+
+  See everything on the wire. The traffic inspector records every JSON-RPC
+  request, response and notification with timing, server logs show what a
+  process prints, and a raw JSON-RPC console sends any method you type.
+
+  Fast and keyboard friendly, with a command palette, light and dark themes,
+  stacked or side-by-side panes that remember their size, and Claude Desktop
+  configuration import and export. Your servers and settings are plain JSON
+  files in your home folder; nothing is sent anywhere except your connections
+  to MCP servers.
+
+category: Developer Tools
+
+# Desktop app built with Flutter.
+supported_os:
+  - macos
+  - windows
+  - linux
+
+developer: Prateek Thakur
+website: https://github.com/prateekthakur272/rocket_mcp
+support_url: https://github.com/prateekthakur272/rocket_mcp/issues
+
+tags:
+  - mcp
+  - model-context-protocol
+  - ai
+  - json-rpc
+  - api-testing
+  - developer-tools
+  - flutter

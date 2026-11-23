@@ -25,9 +25,20 @@ class HeaderBar extends StatelessWidget {
           // The gap to the trailing controls lives inside the leading area, so it vanishes with it.
           child: Padding(
             padding: EdgeInsets.only(right: spacing),
+            // The gaps are padding inside each item, not Row spacing, so they shrink away with the item instead of
+            // forcing the row wider than the room it has.
             child: Row(
-              spacing: spacing,
-              children: [for (final item in leading) Flexible(child: item)],
+              children: [
+                for (var i = 0; i < leading.length; i++)
+                  Flexible(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        right: i == leading.length - 1 ? 0 : spacing,
+                      ),
+                      child: leading[i],
+                    ),
+                  ),
+              ],
             ),
           ),
         ),

@@ -13,6 +13,7 @@ class Ic {
   static const IconData speed = Icons.speed_rounded;
   static const IconData checklist = Icons.checklist_rounded;
   static const IconData more = Icons.more_horiz_rounded;
+  static const IconData moreVert = Icons.more_vert_rounded;
   static const IconData refresh = Icons.refresh_rounded;
   static const IconData collapseAll = Icons.unfold_less_rounded;
   static const IconData up = Icons.keyboard_arrow_up_rounded;

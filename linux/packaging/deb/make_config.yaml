@@ -1,0 +1,21 @@
+display_name: Rocket MCP
+package_name: rocket-mcp
+maintainer:
+  name: Prateek Thakur
+  email: prateekthakur272@gmail.com
+installed_size: 60000
+priority: optional
+section: devel
+essential: false
+icon: linux/runner/resources/icon.png
+generic_name: MCP Testing Client
+categories:
+  - Development
+  - Utility
+keywords:
+  - mcp
+  - model-context-protocol
+  - ai
+  - llm
+  - testing
+startup_notify: true

@@ -6,11 +6,13 @@ import 'package:flutter/widgets.dart';
 import 'package:material_ui/material_ui.dart' show SelectableText, Tooltip;
 import 'package:rocket_mcp/app/app_state.dart';
 import 'package:rocket_mcp/app/mcp_session.dart';
+import 'package:rocket_mcp/components/layout.dart';
 import 'package:rocket_mcp/components/overlay.dart';
 import 'package:rocket_mcp/components/resizable_pane.dart';
 import 'package:rocket_mcp/components/buttons.dart';
 import 'package:rocket_mcp/components/empty_state.dart';
 import 'package:rocket_mcp/features/workspace/list_empty_state.dart';
+import 'package:rocket_mcp/features/workspace/response_viewer.dart';
 import 'package:rocket_mcp/components/field.dart';
 import 'package:rocket_mcp/components/badge_icon_btn.dart';
 import 'package:rocket_mcp/components/header_bar.dart';
@@ -28,8 +30,9 @@ import 'package:rocket_mcp/theme/theme.dart';
 
 /// Interactive tool runner for exploring, configuring arguments, and executing MCP tools.
 class ToolRunnerView extends StatefulWidget {
-  const ToolRunnerView({super.key, required this.session});
+  const ToolRunnerView({super.key, required this.session, this.state});
   final McpSession session;
+  final AppState? state;
 
   @override
   State<ToolRunnerView> createState() => _ToolRunnerViewState();
@@ -41,6 +44,8 @@ class _ToolRunnerViewState extends State<ToolRunnerView> {
   @override
   Widget build(BuildContext context) {
     final p = context.pal;
+    final app = widget.state ?? AppScope.of(context);
+    final vertical = app.settings.verticalLayout;
     final session = widget.session;
     final tools = session.tools;
     final filteredTools = _searchQuery.isEmpty
@@ -63,8 +68,8 @@ class _ToolRunnerViewState extends State<ToolRunnerView> {
       children: [
         // Tools list sidebar
         ResizablePane(
-          width: AppScope.of(context).listPaneWidth,
-          onWidth: (w) => AppScope.read(context).listPaneWidth = w,
+          width: app.listPaneWidth,
+          onWidth: (w) => app.listPaneWidth = w,
           child: Container(
             decoration: BoxDecoration(
               color: p.panel,
@@ -79,6 +84,9 @@ class _ToolRunnerViewState extends State<ToolRunnerView> {
                     value: _searchQuery,
                     onChange: (v) => setState(() => _searchQuery = v),
                     placeholder: 'Filter tools…',
+                    prefixIcon: Ic.search,
+                    clearable: true,
+                    highlightVars: false,
                   ),
                 ),
                 Container(height: 1, color: p.border),
@@ -109,25 +117,35 @@ class _ToolRunnerViewState extends State<ToolRunnerView> {
           ),
         ),
 
-        // Tool execution builder
+        // Tool execution builder & Response panel
         Expanded(
-          child: selectedTool == null
-              ? EmptyState(
-                  icon: Ic.tool,
-                  title: 'Select a tool',
-                  message: tools.isEmpty
-                      ? 'Tools the server exposes appear in the list.'
-                      : 'Pick a tool from the list to fill in its arguments and run it.',
-                  suggestions: [
-                    for (final t in tools.take(4))
-                      EmptySuggestion(
-                        t.name,
-                        () => session.selectedTool = t,
-                        icon: Ic.tool,
-                      ),
-                  ],
-                )
-              : _ToolForm(session: session, tool: selectedTool),
+          child: SplitPane(
+            vertical: vertical,
+            fraction: app.splitFraction,
+            onFraction: (v) => app.splitFraction = v,
+            first: selectedTool == null
+                ? EmptyState(
+                    icon: Ic.tool,
+                    title: 'Select a tool',
+                    message: tools.isEmpty
+                        ? 'Tools the server exposes appear in the list.'
+                        : 'Pick a tool from the list to fill in its arguments and run it.',
+                    suggestions: [
+                      for (final t in tools.take(4))
+                        EmptySuggestion(
+                          t.name,
+                          () => session.selectedTool = t,
+                          icon: Ic.tool,
+                        ),
+                    ],
+                  )
+                : _ToolForm(session: session, tool: selectedTool),
+            second: ResponseViewer(
+              session: session,
+              onToggleLayout: app.toggleLayout,
+              isVertical: vertical,
+            ),
+          ),
         ),
       ],
     );

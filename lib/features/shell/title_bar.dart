@@ -52,6 +52,7 @@ class TitleBar extends StatelessWidget {
                                 isMac: false,
                                 quit: chrome.onQuit,
                                 minimize: chrome.onMinimize,
+                                toggleMaximize: chrome.onToggleMaximize,
                               ),
                               tm: state.titleMenu,
                             ),

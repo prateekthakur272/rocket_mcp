@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:rocket_mcp/components/modifiers.dart';
+import 'package:rocket_mcp/components/state_graphic.dart';
 import 'package:rocket_mcp/components/text.dart';
 import 'package:rocket_mcp/theme/icons.dart';
 import 'package:rocket_mcp/theme/theme.dart';
@@ -12,12 +13,14 @@ class EmptySuggestion {
   final IconData? icon;
 }
 
-/// What to show where there is nothing yet: a soft icon badge, a title, one line of guidance, then optional action
-/// widgets (buttons) and clickable [suggestions]. [compact] shrinks it for narrow lists.
+/// What to show where there is nothing yet: a rich vector graphic illustration or soft badge, a title,
+/// one line of guidance, then optional action widgets (buttons) and clickable [suggestions].
+/// [compact] shrinks it for narrow lists.
 class EmptyState extends StatelessWidget {
   const EmptyState({
     super.key,
-    required this.icon,
+    this.icon,
+    this.graphic,
     required this.title,
     this.message,
     this.actions = const [],
@@ -25,7 +28,8 @@ class EmptyState extends StatelessWidget {
     this.compact = false,
   });
 
-  final IconData icon;
+  final IconData? icon;
+  final Widget? graphic;
   final String title;
   final String? message;
   final List<Widget> actions;
@@ -35,7 +39,6 @@ class EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.pal;
-    final badge = compact ? 40.0 : 60.0;
     return Center(
       child: SingleChildScrollView(
         // Not the primary controller: the sidebar's scrollbar owns it.
@@ -47,16 +50,16 @@ class EmptyState extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             spacing: compact ? 6 : 8,
             children: [
-              Container(
-                width: badge,
-                height: badge,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: p.accent.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(badge * 0.3),
+              if (graphic != null)
+                Padding(
+                  padding: EdgeInsets.only(bottom: compact ? 2 : 6),
+                  child: graphic,
+                )
+              else if (icon != null)
+                Padding(
+                  padding: EdgeInsets.only(bottom: compact ? 2 : 6),
+                  child: StateGraphic(icon: icon, compact: compact),
                 ),
-                child: Ico(icon, size: badge * 0.46, tint: p.accent),
-              ),
               T(
                 title,
                 size: compact ? 12.5 : 15,

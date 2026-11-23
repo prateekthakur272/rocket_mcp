@@ -56,6 +56,9 @@ class _TrafficInspectorViewState extends State<TrafficInspectorView> {
                   onChange: (v) => setState(() => _filter = v),
                   placeholder:
                       'Filter JSON-RPC traffic (method, type, payload)…',
+                  prefixIcon: Ic.search,
+                  clearable: true,
+                  highlightVars: false,
                 ),
               ),
               Btn(
@@ -91,31 +94,36 @@ class _TrafficInspectorViewState extends State<TrafficInspectorView> {
                             1 -
                             i]; // Reverse chronological
                     final isSel = item.id == session.selectedTrafficEntry?.id;
-                    return Clickable(
-                      onClick: () => session.selectedTrafficEntry = item,
-                      child: Container(
+                    return HoverBuilder(
+                      cursor: SystemMouseCursors.click,
+                      onTap: () {
+                        setState(() => session.selectedTrafficEntry = item);
+                      },
+                      builder: (context, hovered) => Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 7,
+                          horizontal: 10,
+                          vertical: 3.5,
                         ),
                         decoration: BoxDecoration(
                           color: isSel
                               ? p.selected
-                              : (i.isEven
-                                    ? p.hover.withValues(alpha: 0.3)
-                                    : const Color(0x00000000)),
+                              : (hovered
+                                    ? p.hover
+                                    : (i.isEven
+                                          ? p.hover.withValues(alpha: 0.25)
+                                          : const Color(0x00000000))),
                           border: Border(
                             left: BorderSide(
                               color: isSel ? p.accent : const Color(0x00000000),
-                              width: 3,
+                              width: 2.5,
                             ),
                             bottom: BorderSide(
-                              color: p.border.withValues(alpha: 0.4),
+                              color: p.border.withValues(alpha: 0.25),
                             ),
                           ),
                         ),
                         child: Row(
-                          spacing: 10,
+                          spacing: 6,
                           children: [
                             // Direction Indicator
                             Ico(
@@ -126,49 +134,51 @@ class _TrafficInspectorViewState extends State<TrafficInspectorView> {
                                   item.direction == McpMessageDirection.outgoing
                                   ? p.accent
                                   : p.ok,
-                              size: 14,
+                              size: 11,
                             ),
 
-                            // Type badge
+                            // Type badge (compact, log-styled)
                             Container(
-                              width: 76,
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 5,
-                                vertical: 2,
+                                horizontal: 8,
+                                vertical: 2.5,
                               ),
                               decoration: BoxDecoration(
                                 color: _typeBg(p, item.type),
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: Center(
-                                child: T(
-                                  item.type.name.toUpperCase(),
-                                  size: 9,
-                                  mono: true,
-                                  weight: FontWeight.w700,
-                                  color: _typeFg(p, item.type),
-                                ),
+                              child: T(
+                                item.type.name,
+                                size: 9,
+                                mono: true,
+                                lineHeight: 1.1,
+                                weight: FontWeight.w600,
+                                color: _typeFg(p, item.type),
                               ),
                             ),
 
                             // Method or JSON-RPC ID
                             Expanded(
                               child: Row(
-                                spacing: 8,
+                                spacing: 6,
                                 children: [
-                                  T(
-                                    item.method ??
-                                        (item.jsonRpcId != null
-                                            ? 'id: ${item.jsonRpcId}'
-                                            : 'response'),
-                                    size: 12,
-                                    mono: true,
-                                    weight: FontWeight.w600,
+                                  Flexible(
+                                    child: T(
+                                      item.method ??
+                                          (item.jsonRpcId != null
+                                              ? 'id: ${item.jsonRpcId}'
+                                              : 'response'),
+                                      size: 11,
+                                      mono: true,
+                                      weight: FontWeight.w500,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
                                   if (item.durationMs != null)
                                     T(
                                       '${item.durationMs}ms',
-                                      size: 10,
+                                      size: 9.5,
                                       mono: true,
                                       color: p.muted,
                                     ),
@@ -179,7 +189,7 @@ class _TrafficInspectorViewState extends State<TrafficInspectorView> {
                             // Timestamp
                             T(
                               '${item.timestamp.hour.toString().padLeft(2, '0')}:${item.timestamp.minute.toString().padLeft(2, '0')}:${item.timestamp.second.toString().padLeft(2, '0')}.${item.timestamp.millisecond.toString().padLeft(3, '0')}',
-                              size: 11,
+                              size: 9.5,
                               mono: true,
                               color: p.muted,
                             ),
