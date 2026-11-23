@@ -86,9 +86,9 @@ class _ToolRunnerViewState extends State<ToolRunnerView> {
                   child: filteredTools.isEmpty
                       ? ListEmptyState(
                           noun: 'tools',
+                          loading: session.isDiscovering,
                           icon: Ic.tool,
                           filtered: tools.isNotEmpty,
-                          onRefresh: session.refreshTools,
                         )
                       : ListView.builder(
                           itemCount: filteredTools.length,

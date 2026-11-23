@@ -82,11 +82,6 @@ class _ResourceRunnerViewState extends State<ResourceRunnerView> {
                           color: p.muted,
                         ),
                       ),
-                      IconBtn(
-                        icon: Ic.refresh,
-                        size: 14,
-                        onClick: session.refreshResources,
-                      ),
                     ],
                   ),
                 ),
@@ -94,8 +89,8 @@ class _ResourceRunnerViewState extends State<ResourceRunnerView> {
                   child: resources.isEmpty && templates.isEmpty
                       ? ListEmptyState(
                           noun: 'resources',
+                          loading: session.isDiscovering,
                           icon: Ic.resource,
-                          onRefresh: session.refreshResources,
                         )
                       : ListView(
                           padding: const EdgeInsets.symmetric(vertical: 4),

@@ -144,15 +144,23 @@ class McpStdioTransport implements McpTransport {
       throw StateError('Cannot send message: stdio process is not connected');
     }
 
-    try {
-      final line = jsonEncode(message);
+    // Writes go one at a time: flushing stdin binds the sink to a stream, so a second write started during a flush
+    // fails with "StreamSink is bound to a stream". Requests are sent in parallel after connecting, so they queue here.
+    final line = jsonEncode(message);
+    final written = _writeQueue.then((_) async {
       proc.stdin.writeln(line);
       await proc.stdin.flush();
+    });
+    _writeQueue = written.then((_) {}, onError: (_) {});
+    try {
+      await written;
     } catch (e, st) {
       Log.error(_tag, 'Failed to write to stdin', e, st);
       rethrow;
     }
   }
+
+  Future<void> _writeQueue = Future<void>.value();
 
   @override
   Future<void> close() async {

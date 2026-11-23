@@ -57,11 +57,6 @@ class PromptRunnerView extends StatelessWidget {
                           color: p.muted,
                         ),
                       ),
-                      IconBtn(
-                        icon: Ic.refresh,
-                        size: 14,
-                        onClick: session.refreshPrompts,
-                      ),
                     ],
                   ),
                 ),
@@ -69,8 +64,8 @@ class PromptRunnerView extends StatelessWidget {
                   child: prompts.isEmpty
                       ? ListEmptyState(
                           noun: 'prompts',
+                          loading: session.isDiscovering,
                           icon: Ic.prompt,
-                          onRefresh: session.refreshPrompts,
                         )
                       : ListView.builder(
                           itemCount: prompts.length,

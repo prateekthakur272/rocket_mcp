@@ -107,6 +107,8 @@ class McpSession extends ChangeNotifier {
     _selectedResource = res;
     _resourceContents = null;
     notifyListeners();
+    // A resource is read as soon as it is selected.
+    if (res != null) unawaited(readResource(res.uri));
   }
 
   List<McpResourceContent>? _resourceContents;
@@ -126,6 +128,10 @@ class McpSession extends ChangeNotifier {
     _promptArguments.clear();
     _promptResult = null;
     notifyListeners();
+    // A prompt that needs no argument is fetched as soon as it is selected; one that does waits for its arguments.
+    if (prompt != null && !prompt.arguments.any((a) => a.required)) {
+      unawaited(fetchPrompt());
+    }
   }
 
   final Map<String, String> _promptArguments = {};
@@ -242,21 +248,39 @@ class McpSession extends ChangeNotifier {
 
       await client.connect();
       _status = McpServerStatus.connected;
-
-      // Ping to establish latency baseline
-      try {
-        _pingLatency = await client.ping();
-      } catch (_) {}
-
-      // Discover server capabilities
-      await Future.wait([refreshTools(), refreshResources(), refreshPrompts()]);
-
+      _isDiscovering = true;
+      // Show the connected workspace right away; its lists fill in as each answer arrives.
       notifyListeners();
+      await _discover(client);
     } catch (e, st) {
       Log.error(_tag, 'Connection failed for ${config.name}', e, st);
       _status = McpServerStatus.error;
       _statusError = e.toString();
       await disconnect();
+      notifyListeners();
+    }
+  }
+
+  bool _isDiscovering = false;
+
+  /// True while the lists of tools, resources and prompts are first being fetched after connecting.
+  bool get isDiscovering => _isDiscovering;
+
+  /// Fetches everything the server offers, all at once, as soon as the connection is up: the tools, resources and
+  /// prompts it advertises, and a ping for the latency. A server that advertises none of them is asked for all three,
+  /// since many only declare a few capabilities.
+  Future<void> _discover(McpClient client) async {
+    final caps = client.serverCapabilities ?? const McpCapabilities();
+    final askAll = !(caps.tools || caps.resources || caps.prompts);
+    try {
+      await Future.wait([
+        if (askAll || caps.tools) refreshTools(),
+        if (askAll || caps.resources) refreshResources(),
+        if (askAll || caps.prompts) refreshPrompts(),
+        ping(),
+      ]);
+    } finally {
+      _isDiscovering = false;
       notifyListeners();
     }
   }
@@ -287,16 +311,20 @@ class McpSession extends ChangeNotifier {
     final c = _client;
     if (c == null || !c.isConnected) return;
     try {
-      final res = await Future.wait([
+      // Templates are optional: a server without them must not hide its resources.
+      final lists = await Future.wait([
         c.listResources(),
-        c.listResourceTemplates(),
+        c.listResourceTemplates().catchError((Object e) {
+          Log.info(_tag, 'Server has no resource templates: $e');
+          return <McpResourceTemplate>[];
+        }),
       ]);
-      _resources = res[0] as List<McpResource>;
-      _resourceTemplates = res[1] as List<McpResourceTemplate>;
-      if (_selectedResource == null && _resources.isNotEmpty) {
-        _selectedResource = _resources.first;
-      }
+      _resources = lists[0] as List<McpResource>;
+      _resourceTemplates = lists[1] as List<McpResourceTemplate>;
       notifyListeners();
+      if (_selectedResource == null && _resources.isNotEmpty) {
+        selectedResource = _resources.first;
+      }
     } catch (e) {
       Log.warning(_tag, 'Failed to refresh resources: $e');
     }
@@ -308,10 +336,10 @@ class McpSession extends ChangeNotifier {
     if (c == null || !c.isConnected) return;
     try {
       _prompts = await c.listPrompts();
-      if (_selectedPrompt == null && _prompts.isNotEmpty) {
-        _selectedPrompt = _prompts.first;
-      }
       notifyListeners();
+      if (_selectedPrompt == null && _prompts.isNotEmpty) {
+        selectedPrompt = _prompts.first;
+      }
     } catch (e) {
       Log.warning(_tag, 'Failed to refresh prompts: $e');
     }
@@ -461,6 +489,7 @@ class McpSession extends ChangeNotifier {
   /// Disconnects the session and frees client resources.
   Future<void> disconnect() async {
     _status = McpServerStatus.disconnected;
+    _isDiscovering = false;
     _pingLatency = null;
     await _trafficSub?.cancel();
     await _serverLogSub?.cancel();

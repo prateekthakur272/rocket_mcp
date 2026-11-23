@@ -15,6 +15,7 @@ import 'package:rocket_mcp/features/workspace/server_header.dart';
 import 'package:rocket_mcp/features/workspace/server_logs_view.dart';
 import 'package:rocket_mcp/features/workspace/tool_runner_view.dart';
 import 'package:rocket_mcp/features/workspace/traffic_inspector_view.dart';
+import 'package:rocket_mcp/features/workspace/traffic_packet_view.dart';
 import 'package:rocket_mcp/features/workspace/workspace_tabs.dart';
 import 'package:rocket_mcp/theme/icons.dart';
 import 'package:rocket_mcp/theme/theme.dart';
@@ -88,19 +89,7 @@ class WorkspaceView extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         WorkspaceTabs(session: session),
-                        Expanded(
-                          child: SplitPane(
-                            vertical: state.settings.verticalLayout,
-                            fraction: state.splitFraction,
-                            onFraction: (v) => state.splitFraction = v,
-                            first: _buildActiveExplorer(session),
-                            second: ResponseViewer(
-                              session: session,
-                              onToggleLayout: state.toggleLayout,
-                              isVertical: state.settings.verticalLayout,
-                            ),
-                          ),
-                        ),
+                        Expanded(child: _tabBody(session)),
                       ],
                     )
                   : DisconnectedPanel(
@@ -112,6 +101,33 @@ class WorkspaceView extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  /// A tab's content. Tools has the tool result beside (or below) its runner; the Traffic Inspector has the selected
+  /// packet; every other tab shows its own results and uses the full width.
+  Widget _tabBody(McpSession session) {
+    final explorer = _buildActiveExplorer(session);
+    final detail = switch (session.activeTab) {
+      WorkspaceTab.tools => ResponseViewer(
+        session: session,
+        onToggleLayout: state.toggleLayout,
+        isVertical: state.settings.verticalLayout,
+      ),
+      WorkspaceTab.inspector => TrafficPacketView(
+        entry: session.selectedTrafficEntry,
+        onToggleLayout: state.toggleLayout,
+        isVertical: state.settings.verticalLayout,
+      ),
+      _ => null,
+    };
+    if (detail == null) return explorer;
+    return SplitPane(
+      vertical: state.settings.verticalLayout,
+      fraction: state.splitFraction,
+      onFraction: (v) => state.splitFraction = v,
+      first: explorer,
+      second: detail,
     );
   }
 

@@ -16,7 +16,8 @@ import 'package:rocket_mcp/theme/icons.dart';
 import 'package:rocket_mcp/theme/theme.dart';
 import 'package:rocket_mcp/utils/json.dart';
 
-/// Right or bottom pane: displays execution responses, image previews, and traffic inspection details.
+/// Right or bottom pane of the Tools tab: the result of the last tool call, as a tree, raw JSON, formatted text or
+/// images.
 class ResponseViewer extends StatefulWidget {
   const ResponseViewer({
     super.key,
@@ -57,12 +58,6 @@ class _ResponseViewerState extends State<ResponseViewer> {
   Widget build(BuildContext context) {
     final p = context.pal;
     final session = widget.session;
-
-    // Check if we are inspecting a traffic entry
-    if (session.activeTab == WorkspaceTab.inspector &&
-        session.selectedTrafficEntry != null) {
-      return _buildTrafficDetails(p, session.selectedTrafficEntry!);
-    }
 
     final toolResult = session.lastToolResult;
     final isRunning = session.isRunningTool;
@@ -278,109 +273,6 @@ class _ResponseViewerState extends State<ResponseViewer> {
             : 'text',
         wrap: _wrapCode,
       ),
-    );
-  }
-
-  Widget _buildTrafficDetails(Pal p, McpMessageLogEntry entry) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Traffic inspect header
-        Container(
-          height: 38,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: p.panel,
-            border: Border(bottom: BorderSide(color: p.border)),
-          ),
-          child: HeaderBar(
-            leading: [
-              Ico(Ic.timer, tint: p.muted, size: 14),
-              const T(
-                'JSON-RPC Packet',
-                weight: FontWeight.w600,
-                size: 12,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                decoration: BoxDecoration(
-                  color: p.muted.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-                child: T(
-                  entry.direction == McpMessageDirection.outgoing
-                      ? 'OUTGOING'
-                      : 'INCOMING',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  size: 9,
-                  mono: true,
-                  color: entry.direction == McpMessageDirection.outgoing
-                      ? p.accent
-                      : p.ok,
-                ),
-              ),
-            ],
-            trailing: [
-              ViewModeMenu(
-                current: _viewMode == 'Tree' ? 'Tree' : 'Raw JSON',
-                options: const [
-                  MenuOpt('Raw JSON', 'Raw JSON', Ic.fmtJson),
-                  MenuOpt('Tree', 'Tree', Ic.workflow),
-                ],
-                onSelect: (m) => setState(() => _viewMode = m),
-              ),
-              IconBtnGroup(
-                children: [
-                  if (_viewMode == 'Tree') ...[
-                    _groupBtn(
-                      Ic.expandAll,
-                      'Expand all',
-                      () => setState(() => _treeExpandSignal++),
-                    ),
-                    _groupBtn(
-                      Ic.collapseAll,
-                      'Collapse all',
-                      () => setState(() => _treeExpandSignal--),
-                    ),
-                  ],
-                  _groupBtn(Ic.copy, 'Copy', () {
-                    Clipboard.setData(
-                      ClipboardData(text: entry.formattedPayload),
-                    );
-                  }),
-                  _groupBtn(
-                    widget.isVertical ? Ic.splitH : Ic.splitV,
-                    'Switch layout',
-                    widget.onToggleLayout,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        // Payload inspection
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: _viewMode == 'Tree'
-                ? JsonTree(
-                    root: entry.payload,
-                    expandSignal: _treeExpandSignal,
-                    onCopy: (val, msg) {
-                      Clipboard.setData(ClipboardData(text: val));
-                    },
-                  )
-                : CodeView(
-                    text: entry.formattedPayload,
-                    lang: 'json',
-                    wrap: _wrapCode,
-                  ),
-          ),
-        ),
-      ],
     );
   }
 }
