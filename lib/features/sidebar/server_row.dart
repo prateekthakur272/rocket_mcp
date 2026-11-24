@@ -132,9 +132,13 @@ class _ServerRowState extends State<ServerRow> {
               open: _menuOpen,
               onDismiss: () => setState(() => _menuOpen = false),
               items: [
-                if (_status == McpServerStatus.connected)
-                  MenuItem('Disconnect', action: widget.onDisconnect)
-                else
+                if (_status == McpServerStatus.connected) ...[
+                  MenuItem(
+                    'Ping',
+                    action: () => widget.session?.ping(feedback: true),
+                  ),
+                  MenuItem('Disconnect', action: widget.onDisconnect),
+                ] else
                   MenuItem('Connect', action: widget.onConnect),
                 MenuItem('Configurations', action: widget.onEdit),
                 MenuItem('Duplicate', action: widget.onDuplicate),

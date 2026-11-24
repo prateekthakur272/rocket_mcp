@@ -4,13 +4,17 @@ import 'package:material_ui/material_ui.dart' show Icons;
 import 'package:rocket_mcp/app/app_state.dart';
 import 'package:rocket_mcp/components/buttons.dart';
 import 'package:rocket_mcp/components/field.dart';
+import 'package:rocket_mcp/components/item_tile.dart';
 import 'package:rocket_mcp/components/layout.dart';
 import 'package:rocket_mcp/components/modifiers.dart';
-import 'package:rocket_mcp/components/segmented.dart';
 import 'package:rocket_mcp/components/text.dart';
+import 'package:rocket_mcp/theme/icons.dart' show Ic, Ico;
 import 'package:rocket_mcp/components/toggle.dart';
 import 'package:rocket_mcp/core/model/app_settings.dart';
+import 'package:rocket_mcp/app/modal.dart';
 import 'package:rocket_mcp/core/storage/app_store.dart';
+import 'package:rocket_mcp/features/shell/update_dialog.dart';
+import 'package:rocket_mcp/utils/app_metadata.dart';
 import 'package:rocket_mcp/platform/platform.dart';
 import 'package:rocket_mcp/theme/theme.dart';
 import 'package:rocket_mcp/utils/app_config.dart';
@@ -53,43 +57,110 @@ class _Pref {
     this.control, {
     this.desc = '',
     this.descColor,
+    this.icon,
+    this.choices,
   });
   final _Section section;
   final String title;
   final String desc;
   final Color? descColor;
   final Widget control;
+
+  /// Badge shown at the start of the card.
+  final IconData? icon;
+
+  /// When set, the setting is a heading with these selectable cards beneath it.
+  final Widget? choices;
 }
 
-class _BorderThenFill extends CustomPainter {
-  _BorderThenFill({
-    required this.border,
-    required this.fill,
-    required this.radius,
+/// A selectable card (as in devspace's settings): icon, title, hint, and a check when chosen.
+class _ChoiceCard extends StatelessWidget {
+  const _ChoiceCard({
+    required this.icon,
+    required this.title,
+    required this.hint,
+    required this.selected,
+    required this.onTap,
   });
-  final Color border;
-  final Color fill;
-  final double radius;
+  final IconData icon;
+  final String title;
+  final String hint;
+  final bool selected;
+  final VoidCallback onTap;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final r = RRect.fromRectAndRadius(
-      Offset.zero & size,
-      Radius.circular(radius),
+  Widget build(BuildContext context) {
+    final p = context.pal;
+    return Expanded(
+      child: HoverBuilder(
+        cursor: SystemMouseCursors.click,
+        onTap: onTap,
+        builder: (context, hovered) => AnimatedContainer(
+          duration: const Duration(milliseconds: 140),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: selected
+                ? p.accent.withValues(alpha: 0.12)
+                : hovered
+                ? p.hover
+                : p.field,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: selected
+                  ? p.accent
+                  : hovered
+                  ? p.accent.withValues(alpha: 0.4)
+                  : p.border,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Ico(icon, size: 18, tint: selected ? p.accent : p.muted),
+                  const Spacer(),
+                  if (selected)
+                    Ico(Icons.check_circle_rounded, size: 15, tint: p.accent),
+                ],
+              ),
+              const SizedBox(height: 10),
+              T(
+                title,
+                size: 12.5,
+                weight: FontWeight.w700,
+                color: selected ? p.accent : p.text,
+              ),
+              const SizedBox(height: 2),
+              T(hint, size: 10.5, color: p.muted),
+            ],
+          ),
+        ),
+      ),
     );
-    canvas.drawRRect(
-      r.deflate(0.5),
-      Paint()
-        ..color = border
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1,
-    );
-    canvas.drawRRect(r, Paint()..color = fill);
   }
+}
+
+/// The tinted rounded-square badge that leads a setting (the same badge the list tiles use).
+class _IconBadge extends StatelessWidget {
+  const _IconBadge(this.icon);
+  final IconData icon;
 
   @override
-  bool shouldRepaint(_BorderThenFill o) =>
-      o.border != border || o.fill != fill || o.radius != radius;
+  Widget build(BuildContext context) {
+    final p = context.pal;
+    return Container(
+      width: 26,
+      height: 26,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: p.accent.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: Ico(icon, size: 14, tint: p.accent),
+    );
+  }
 }
 
 class _NumberField extends StatelessWidget {
@@ -156,6 +227,123 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
     });
   }
 
+  Widget _card(Pal p, Widget child, {EdgeInsets? padding}) => Container(
+    padding: padding ?? const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: p.field,
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: p.border, width: 1),
+    ),
+    child: child,
+  );
+
+  Widget _row(Pal p, _Pref x, _Section section) => Row(
+    spacing: 12,
+    children: [
+      if (x.icon != null) _IconBadge(x.icon!),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 2,
+          children: [
+            T(x.title, weight: FontWeight.w600, size: 12.5),
+            if (x.desc.trim().isNotEmpty)
+              T(
+                x.desc,
+                color: x.descColor ?? p.muted,
+                size: 11,
+                mono: section == _Section.Data && x.title == 'Storage location',
+              ),
+          ],
+        ),
+      ),
+      x.control,
+    ],
+  );
+
+  Widget _choiceBlock(Pal p, _Pref x) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      T(x.title, size: 12.5, weight: FontWeight.w700),
+      const SizedBox(height: 4),
+      T(x.desc, size: 11.5, color: p.muted),
+      const SizedBox(height: 10),
+      x.choices!,
+      const SizedBox(height: 8),
+    ],
+  );
+
+  /// The app name and version, with the tour and update actions.
+  Widget _about(Pal p) => _card(
+    p,
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 12,
+      children: [
+        Row(
+          spacing: 10,
+          children: [
+            Ico(Ic.logo, size: 28, withBg: true),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 2,
+                children: [
+                  Row(
+                    children: [
+                      const T(
+                        AppConfig.NAME,
+                        size: 13,
+                        weight: FontWeight.w700,
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 1.5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: p.accent.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: T(
+                          'v${AppMetadata.version}',
+                          size: 10,
+                          weight: FontWeight.w700,
+                          color: p.accent,
+                        ),
+                      ),
+                    ],
+                  ),
+                  T(
+                    'A desktop client for testing MCP servers.',
+                    size: 11,
+                    color: p.muted,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        Row(
+          spacing: 8,
+          children: [
+            Btn(
+              label: 'Welcome Tour…',
+              icon: Icons.explore_outlined,
+              onClick: () => widget.state.modal = const ModalOnboarding(),
+            ),
+            Btn(
+              label: 'Check for Updates…',
+              icon: Icons.update_rounded,
+              onClick: () => checkForUpdates(widget.state),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     final p = context.pal;
@@ -165,27 +353,43 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
 
     final prefs = <_Pref>[
       _Pref(
+        _Section.Appearance,
+        'Theme',
+        const SizedBox.shrink(),
+        desc: s.theme == ThemeMode.system
+            ? "Follows your operating system's light / dark setting (currently ${p.dark ? 'dark' : 'light'})."
+            : 'Choose your preferred interface theme.',
+        choices: Row(
+          spacing: 10,
+          children: [
+            for (final (mode, icon, hint) in [
+              (
+                ThemeMode.system,
+                Icons.brightness_auto_rounded,
+                'Match OS look',
+              ),
+              (ThemeMode.dark, Icons.dark_mode_rounded, 'Charcoal palette'),
+              (ThemeMode.light, Icons.light_mode_rounded, 'Daylight palette'),
+            ])
+              _ChoiceCard(
+                icon: icon,
+                title: mode.label,
+                hint: hint,
+                selected: s.theme == mode,
+                onTap: () => set(s.copyWith(theme: mode)),
+              ),
+          ],
+        ),
+      ),
+      _Pref(
         _Section.General,
         'Save automatically',
         Toggle(
           on: s.autoSave,
           onChange: (v) => set(s.copyWith(autoSave: v)),
         ),
+        icon: Icons.save_rounded,
         desc: 'Saves tool parameters and prompt fields just before requests are dispatched.',
-      ),
-      _Pref(
-        _Section.Appearance,
-        'Theme',
-        Segmented(
-          options: [for (final m in ThemeMode.values) m.label],
-          selected: s.theme.label,
-          onSelect: (l) => set(
-            s.copyWith(theme: ThemeMode.values.firstWhere((m) => m.label == l)),
-          ),
-        ),
-        desc: s.theme == ThemeMode.system
-            ? "Follows your operating system's light / dark setting (currently ${p.dark ? 'dark' : 'light'})."
-            : 'Light or dark interface, or follow the operating system.',
       ),
       _Pref(
         _Section.Appearance,
@@ -225,17 +429,33 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
               ),
           ],
         ),
+        icon: Icons.text_fields_rounded,
         desc: 'Scales text and controls (also ⌘+ and ⌘−).',
       ),
       _Pref(
         _Section.Appearance,
         'Workspace layout',
-        Segmented(
-          options: const ['Stacked', 'Side by side'],
-          selected: s.verticalLayout ? 'Stacked' : 'Side by side',
-          onSelect: (v) => set(s.copyWith(verticalLayout: v == 'Stacked')),
-        ),
+        const SizedBox.shrink(),
         desc: 'Show the response below the request, or beside it.',
+        choices: Row(
+          spacing: 10,
+          children: [
+            _ChoiceCard(
+              icon: Icons.view_agenda_rounded,
+              title: 'Stacked',
+              hint: 'Response below the request',
+              selected: s.verticalLayout,
+              onTap: () => set(s.copyWith(verticalLayout: true)),
+            ),
+            _ChoiceCard(
+              icon: Icons.view_column_rounded,
+              title: 'Side by side',
+              hint: 'Response beside the request',
+              selected: !s.verticalLayout,
+              onTap: () => set(s.copyWith(verticalLayout: false)),
+            ),
+          ],
+        ),
       ),
       _Pref(
         _Section.Connections,
@@ -245,6 +465,7 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
           suffix: 'ms',
           onChange: (v) => set(s.copyWith(timeoutMs: v)),
         ),
+        icon: Icons.timer_rounded,
         desc: 'How long to wait for a server to answer a request. 0 means no limit.',
       ),
       _Pref(
@@ -259,6 +480,7 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
             highlightVars: false,
           ),
         ),
+        icon: Icons.badge_rounded,
         desc: 'Sent when connecting over HTTP transports. Leave empty for the default.',
       ),
       _Pref(
@@ -268,6 +490,7 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
           on: s.sslVerify,
           onChange: (v) => set(s.copyWith(sslVerify: v)),
         ),
+        icon: Icons.verified_user_rounded,
         desc: s.sslVerify
             ? 'Reject servers whose certificate cannot be verified.'
             : 'Off: connections are not verified. Use only for servers you trust, such as local development.',
@@ -280,6 +503,7 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
           on: s.proxyEnabled,
           onChange: (v) => set(s.copyWith(proxyEnabled: v)),
         ),
+        icon: Icons.alt_route_rounded,
         desc: 'Route every connection through the proxy below.',
       ),
       if (s.proxyEnabled) ...[
@@ -295,6 +519,7 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
               highlightVars: false,
             ),
           ),
+          icon: Icons.dns_rounded,
           desc: 'Host name or address of the proxy.',
         ),
         _Pref(
@@ -305,6 +530,8 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
             width: 90,
             onChange: (v) => set(s.copyWith(proxyPort: v > 65535 ? 65535 : v)),
           ),
+          icon: Icons.settings_ethernet_rounded,
+          desc: 'Port the proxy listens on.',
         ),
       ],
       for (final (what, keys) in [
@@ -372,6 +599,7 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
           label: Platform.revealLabel,
           onClick: () => Platform.reveal(AppStore.dir),
         ),
+        icon: Icons.folder_rounded,
         desc: AppStore.dir,
       ),
       _Pref(
@@ -402,6 +630,7 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
                   ),
                 ],
               ),
+        icon: Icons.restart_alt_rounded,
         desc: 'Restore every setting to its default. Your server configurations are not touched.',
       ),
     ];
@@ -426,7 +655,8 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
 
     return ModalScaffold(
       title: 'Preferences',
-      width: 680,
+      width: 860,
+      bodyPadding: EdgeInsets.zero,
       onClose: () => state.modal = null,
       actions: [
         Expanded(
@@ -444,196 +674,157 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
         ),
       ],
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 500),
-        child: Column(
+        constraints: const BoxConstraints(maxHeight: 520),
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 1. Top Category Segmented Pills Bar (matching DevSpace)
+            // Side pane, like the app's sidebar: full height, flush with the dialog edge, divided from the content.
             Container(
-              padding: const EdgeInsets.all(4),
+              width: 188,
               decoration: BoxDecoration(
-                color: p.field,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: p.border, width: 1),
+                color: p.panel,
+                border: Border(right: BorderSide(color: p.border)),
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  for (final cat in _Section.values)
-                    Expanded(
-                      child: ClickableNoRipple(
-                        onClick: () => setState(() {
-                          query = '';
-                          section = cat;
-                        }),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 140),
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          decoration: BoxDecoration(
-                            color: !searching && section == cat
-                                ? p.panel
-                                : const Color(0x00000000),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(
-                              color: !searching && section == cat
-                                  ? p.border
-                                  : const Color(0x00000000),
-                              width: 1,
+                  Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Field(
+                      value: query,
+                      onChange: (v) => setState(() => query = v),
+                      placeholder: 'Search…',
+                      highlightVars: false,
+                    ),
+                  ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          for (final cat in _Section.values)
+                            ItemTile(
+                              icon: cat.icon,
+                              title: cat.label,
+                              selected: !searching && section == cat,
+                              onClick: () => setState(() {
+                                query = '';
+                                section = cat;
+                              }),
                             ),
-                            boxShadow: !searching && section == cat
-                                ? [
-                                    BoxShadow(
-                                      color: const Color(
-                                        0xFF000000,
-                                      ).withValues(alpha: p.dark ? 0.3 : 0.05),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 1),
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                cat.icon,
-                                size: 13,
-                                color: !searching && section == cat
-                                    ? p.accent
-                                    : p.muted,
-                              ),
-                              const SizedBox(width: 5),
-                              Flexible(
-                                child: T(
-                                  cat.label,
-                                  size: 11.5,
-                                  weight: !searching && section == cat
-                                      ? FontWeight.w600
-                                      : FontWeight.w500,
-                                  color: !searching && section == cat
-                                      ? p.text
-                                      : p.muted,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        ],
                       ),
                     ),
+                  ),
                 ],
               ),
             ),
-
-            const SizedBox(height: 10),
-
-            // Search input field
-            Field(
-              value: query,
-              onChange: (v) => setState(() => query = v),
-              placeholder: 'Search preferences…',
-              highlightVars: false,
-            ),
-
-            const SizedBox(height: 12),
-
-            // 2. Active Category Content Area
             Expanded(
-              child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    if (!searching) ...[
-                      Row(
-                        children: [
-                          Icon(section.icon, size: 16, color: p.accent),
-                          const SizedBox(width: 8),
-                          T(section.label, size: 13.5, weight: FontWeight.w700),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      T(section.blurb, color: p.muted, size: 11.5),
-                      const SizedBox(height: 12),
-                    ] else ...[
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: T(
-                          shown.isEmpty
-                              ? 'No settings match “$q”.'
-                              : '${shown.length} setting${shown.length == 1 ? '' : 's'} matching “$q”',
-                          color: p.muted,
-                          size: 12,
-                        ),
-                      ),
-                    ],
-
-                    for (final e in groups.entries) ...[
-                      if (searching)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8, bottom: 6),
-                          child: SectionLabel(e.key.label.toUpperCase()),
-                        ),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: CustomPaint(
-                          painter: _BorderThenFill(
-                            border: p.border,
-                            fill: p.field.withValues(alpha: 0.5),
-                            radius: 10,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              for (var i = 0; i < e.value.length; i++) ...[
-                                if (i > 0)
-                                  Container(height: 1, color: p.border),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 12,
+                    // 2. Active Category Content Area
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (!searching) ...[
+                              Row(
+                                children: [
+                                  Ico(section.icon, size: 16, tint: p.accent),
+                                  const SizedBox(width: 8),
+                                  T(
+                                    section.label,
+                                    size: 13.5,
+                                    weight: FontWeight.w700,
                                   ),
-                                  child: Row(
-                                    spacing: 16,
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          spacing: 2,
-                                          children: [
-                                            T(
-                                              e.value[i].title,
-                                              weight: FontWeight.w600,
-                                              size: 12.5,
-                                            ),
-                                            if (e.value[i].desc
-                                                .trim()
-                                                .isNotEmpty)
-                                              T(
-                                                e.value[i].desc,
-                                                color:
-                                                    e.value[i].descColor ??
-                                                    p.muted,
-                                                size: 11.5,
-                                                mono:
-                                                    e.key == _Section.Data &&
-                                                    e.value[i].title ==
-                                                        'Storage location',
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-                                      e.value[i].control,
-                                    ],
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              T(section.blurb, color: p.muted, size: 11.5),
+                              const SizedBox(height: 12),
+                            ] else ...[
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: T(
+                                  shown.isEmpty
+                                      ? 'No settings match “$q”.'
+                                      : '${shown.length} setting${shown.length == 1 ? '' : 's'} matching “$q”',
+                                  color: p.muted,
+                                  size: 12,
+                                ),
+                              ),
+                            ],
+
+                            for (final e in groups.entries) ...[
+                              if (searching)
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: 4,
+                                    bottom: 6,
+                                  ),
+                                  child: SectionLabel(
+                                    e.key.label.toUpperCase(),
                                   ),
                                 ),
-                              ],
+                              if (e.key == _Section.Shortcuts)
+                                _card(
+                                  p,
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      for (
+                                        var i = 0;
+                                        i < e.value.length;
+                                        i++
+                                      ) ...[
+                                        if (i > 0)
+                                          Container(height: 1, color: p.border),
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 9,
+                                          ),
+                                          child: Row(
+                                            spacing: 16,
+                                            children: [
+                                              Expanded(
+                                                child: T(
+                                                  e.value[i].title,
+                                                  weight: FontWeight.w600,
+                                                  size: 12.5,
+                                                ),
+                                              ),
+                                              e.value[i].control,
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                  padding: EdgeInsets.zero,
+                                )
+                              else
+                                for (final x in e.value) ...[
+                                  if (x.choices != null)
+                                    _choiceBlock(p, x)
+                                  else
+                                    _card(p, _row(p, x, e.key)),
+                                  const SizedBox(height: 10),
+                                ],
+                              if (e.key == _Section.General && !searching)
+                                _about(p),
+                              const SizedBox(height: 8),
                             ],
-                          ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 12),
-                    ],
+                    ),
                   ],
                 ),
               ),

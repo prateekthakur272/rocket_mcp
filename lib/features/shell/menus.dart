@@ -77,6 +77,11 @@ class AppMenus {
         shortcut: key(LogicalKeyboardKey.keyN),
       ),
       item(
+        'Server Template Gallery…',
+        () => state.modal = const ModalTemplateGallery(),
+        shortcut: key(LogicalKeyboardKey.keyT),
+      ),
+      item(
         'Import / Export Servers…',
         () => state.modal = const ModalImportExport(),
         shortcut: key(LogicalKeyboardKey.keyI, shift: true),
@@ -264,7 +269,7 @@ class AppMenus {
       ),
       item(
         'Ping Server',
-        () => state.activeSession?.ping(),
+        () => state.activeSession?.ping(feedback: true),
         shortcut: key(LogicalKeyboardKey.keyP, shift: true),
         enabled:
             state.activeSession != null &&

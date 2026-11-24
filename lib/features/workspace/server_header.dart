@@ -131,6 +131,7 @@ class ServerHeader extends StatelessWidget {
                   label: session.status.label,
                   color: tone,
                   latency: connected ? session.pingLatency : null,
+                  isPinging: session.isPinging,
                 ),
                 const SizedBox(width: 6),
                 IconBtn(
@@ -144,12 +145,13 @@ class ServerHeader extends StatelessWidget {
                 const SizedBox(width: 4),
                 if (connected) ...[
                   Btn(
-                    label: 'Ping',
-                    icon: Ic.ping,
+                    label: session.isPinging ? 'Pinging…' : 'Ping',
+                    icon: session.isPinging ? Ic.connecting : Ic.ping,
                     outlined: true,
                     height: 26,
                     fontSize: 11.5,
-                    onClick: session.ping,
+                    enabled: !session.isPinging,
+                    onClick: () => session.ping(feedback: true),
                   ),
                   const SizedBox(width: 6),
                   Btn(
@@ -235,14 +237,23 @@ class _Avatar extends StatelessWidget {
 
 /// A rounded chip with a status dot, the status name and, when known, the last ping latency.
 class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.label, required this.color, this.latency});
+  const _StatusChip({
+    required this.label,
+    required this.color,
+    this.latency,
+    this.isPinging = false,
+  });
   final String label;
   final Color color;
   final Duration? latency;
+  final bool isPinging;
 
   @override
   Widget build(BuildContext context) {
     final ping = latency;
+    final text = isPinging
+        ? '$label · pinging…'
+        : (ping == null ? label : '$label · ${ping.inMilliseconds}ms');
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
@@ -259,7 +270,7 @@ class _StatusChip extends StatelessWidget {
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           T(
-            ping == null ? label : '$label · ${ping.inMilliseconds}ms',
+            text,
             size: 10.5,
             lineHeight: 1.2,
             weight: FontWeight.w600,

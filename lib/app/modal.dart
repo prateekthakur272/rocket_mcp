@@ -43,6 +43,11 @@ class ModalImportExport extends Modal {
   const ModalImportExport();
 }
 
+/// Server Template Gallery catalog modal.
+class ModalTemplateGallery extends Modal {
+  const ModalTemplateGallery();
+}
+
 /// First-time onboarding walkthrough tour.
 class ModalOnboarding extends Modal {
   const ModalOnboarding();

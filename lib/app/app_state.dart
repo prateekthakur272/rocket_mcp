@@ -161,10 +161,16 @@ class AppState extends ChangeNotifier {
 
   McpSession? getSession(String id) => _sessions[id];
 
+  /// Pings the active server and displays toast feedback.
+  Future<Duration?> pingActiveServer({bool feedback = true}) async {
+    return activeSession?.ping(feedback: feedback);
+  }
+
   void _initSession(McpServerConfig server) {
     final session = McpSession(
       config: server,
       transportOverride: transportFactory?.call(server),
+      onToast: showToast,
     );
     session.addListener(notifyListeners);
     _sessions[server.id] = session;

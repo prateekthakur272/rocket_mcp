@@ -49,9 +49,34 @@ class _ResponseViewerState extends State<ResponseViewer> {
     onClick: onClick,
   );
 
-  String _viewMode = 'Tree';
+  String _viewMode = 'Formatted';
   int _treeExpandSignal = 0;
   bool _wrapCode = true;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.session.addListener(_onSessionUpdate);
+  }
+
+  @override
+  void didUpdateWidget(ResponseViewer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.session != widget.session) {
+      oldWidget.session.removeListener(_onSessionUpdate);
+      widget.session.addListener(_onSessionUpdate);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.session.removeListener(_onSessionUpdate);
+    super.dispose();
+  }
+
+  void _onSessionUpdate() {
+    if (mounted) setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {

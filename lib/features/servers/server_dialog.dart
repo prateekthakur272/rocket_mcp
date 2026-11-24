@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:rocket_mcp/app/app_state.dart';
+import 'package:rocket_mcp/app/modal.dart';
 import 'package:rocket_mcp/components/buttons.dart';
 import 'package:rocket_mcp/components/field.dart';
 import 'package:rocket_mcp/components/layout.dart';
@@ -148,7 +149,29 @@ class _ServerConfigDialogState extends State<ServerConfigDialog> {
       ],
       content: [
         if (!isEdit) ...[
-          const SectionLabel('QUICK TEMPLATES'),
+          Row(
+            children: [
+              const SectionLabel('QUICK TEMPLATES'),
+              const Spacer(),
+              ClickableNoRipple(
+                onClick: () =>
+                    widget.state.modal = const ModalTemplateGallery(),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: 4,
+                  children: [
+                    Ico(Ic.presets, size: 12, tint: p.accent),
+                    T(
+                      'Browse Gallery…',
+                      size: 11,
+                      color: p.accent,
+                      weight: FontWeight.w600,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(

@@ -102,6 +102,11 @@ class _PaletteState extends State<Palette> {
     );
     act('Add MCP server…', () => state.modal = const ModalServerConfig(), '⌘N');
     act(
+      'Server template gallery…',
+      () => state.modal = const ModalTemplateGallery(),
+      '⌘T',
+    );
+    act(
       'Import / export MCP servers…',
       () => state.modal = const ModalImportExport(),
       '⌘⇧I',
@@ -113,7 +118,7 @@ class _PaletteState extends State<Palette> {
         '⌘R',
       );
       act('Disconnect active server', () => state.activeSession?.disconnect());
-      act('Ping active server', () => state.activeSession?.ping());
+      act('Ping active server', () => state.activeSession?.ping(feedback: true));
     }
     act('Preferences', () => state.modal = const ModalSettings(), '⌘,');
     act(

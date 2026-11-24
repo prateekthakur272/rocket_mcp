@@ -158,6 +158,8 @@ void main() {
         expect(find.text('User-Agent'), findsOneWidget);
 
         // Switch to Shortcuts
+        await tester.ensureVisible(find.text('Shortcuts').first);
+        await tester.pumpAndSettle();
         await tester.tap(find.text('Shortcuts').first);
         await tester.pumpAndSettle();
         expect(find.text('Command palette'), findsOneWidget);

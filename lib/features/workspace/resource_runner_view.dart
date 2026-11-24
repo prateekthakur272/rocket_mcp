@@ -107,7 +107,6 @@ class _ResourceRunnerViewState extends State<ResourceRunnerView> {
   int _selectedContentIndex = 0;
   List<McpResourceContent>? _lastContents;
   String _searchQuery = '';
-  int _categoryFilter = 0; // 0: All, 1: Static, 2: Templates
 
   @override
   void initState() {
@@ -153,34 +152,27 @@ class _ResourceRunnerViewState extends State<ResourceRunnerView> {
     }
 
     final q = _searchQuery.trim().toLowerCase();
-    final showStatic = _categoryFilter != 2;
-    final showTemplates = _categoryFilter != 1;
+    final filteredResources = q.isEmpty
+        ? resources
+        : resources
+              .where(
+                (r) =>
+                    r.name.toLowerCase().contains(q) ||
+                    r.uri.toLowerCase().contains(q) ||
+                    (r.description?.toLowerCase().contains(q) ?? false),
+              )
+              .toList();
 
-    final filteredResources = !showStatic
-        ? const <McpResource>[]
-        : (q.isEmpty
-              ? resources
-              : resources
-                    .where(
-                      (r) =>
-                          r.name.toLowerCase().contains(q) ||
-                          r.uri.toLowerCase().contains(q) ||
-                          (r.description?.toLowerCase().contains(q) ?? false),
-                    )
-                    .toList());
-
-    final filteredTemplates = !showTemplates
-        ? const <McpResourceTemplate>[]
-        : (q.isEmpty
-              ? templates
-              : templates
-                    .where(
-                      (t) =>
-                          t.name.toLowerCase().contains(q) ||
-                          t.uriTemplate.toLowerCase().contains(q) ||
-                          (t.description?.toLowerCase().contains(q) ?? false),
-                    )
-                    .toList());
+    final filteredTemplates = q.isEmpty
+        ? templates
+        : templates
+              .where(
+                (t) =>
+                    t.name.toLowerCase().contains(q) ||
+                    t.uriTemplate.toLowerCase().contains(q) ||
+                    (t.description?.toLowerCase().contains(q) ?? false),
+              )
+              .toList();
 
     final titleName = _selectedTemplate?.name ?? selectedRes?.name;
     final titleDesc =
@@ -219,41 +211,6 @@ class _ResourceRunnerViewState extends State<ResourceRunnerView> {
                     highlightVars: false,
                   ),
                 ),
-
-                // Category segment when both static resources and templates exist
-                if (templates.isNotEmpty && resources.isNotEmpty) ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Segmented(
-                          options: const ['All', 'Static', 'Templates'],
-                          selected: _categoryFilter == 1
-                              ? 'Static'
-                              : (_categoryFilter == 2 ? 'Templates' : 'All'),
-                          onSelect: (v) {
-                            setState(() {
-                              if (v == 'Static') {
-                                _categoryFilter = 1;
-                              } else if (v == 'Templates') {
-                                _categoryFilter = 2;
-                              } else {
-                                _categoryFilter = 0;
-                              }
-                            });
-                          },
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                ],
                 Container(height: 1, color: p.border),
 
                 Expanded(
@@ -262,17 +219,10 @@ class _ResourceRunnerViewState extends State<ResourceRunnerView> {
                           (filteredResources.isEmpty &&
                               filteredTemplates.isEmpty)
                       ? ListEmptyState(
-                          noun: _categoryFilter == 2
-                              ? 'templates'
-                              : (_categoryFilter == 1
-                                    ? 'resources'
-                                    : 'resources or templates'),
+                          noun: 'resources',
                           loading: session.isDiscovering,
-                          icon: _categoryFilter == 2
-                              ? Ic.resourceTemplate
-                              : Ic.resource,
-                          filtered:
-                              _searchQuery.isNotEmpty || _categoryFilter != 0,
+                          icon: Ic.resource,
+                          filtered: _searchQuery.isNotEmpty,
                         )
                       : ListView(
                           padding: const EdgeInsets.symmetric(vertical: 4),

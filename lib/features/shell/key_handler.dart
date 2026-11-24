@@ -128,7 +128,7 @@ bool handleKey(AppState state, KeyEvent event) {
 
   // Ping: Cmd/Ctrl + Shift + P
   if (key == LogicalKeyboardKey.keyP && shift) {
-    state.activeSession?.ping();
+    state.activeSession?.ping(feedback: true);
     return true;
   }
 

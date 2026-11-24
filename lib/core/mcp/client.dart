@@ -56,7 +56,7 @@ class McpClient {
   final StreamController<McpLogMessage> _serverLogsController =
       StreamController<McpLogMessage>.broadcast();
 
-  final List<String> _stderrLogLines = [];
+  final List<McpStderrEntry> _stderrEntries = [];
   final StreamController<String> _stderrLinesController =
       StreamController<String>.broadcast();
 
@@ -77,7 +77,9 @@ class McpClient {
   List<McpLogMessage> get serverLogs => List.unmodifiable(_serverLogs);
   Stream<McpLogMessage> get onServerLog => _serverLogsController.stream;
 
-  List<String> get stderrLogLines => List.unmodifiable(_stderrLogLines);
+  List<McpStderrEntry> get stderrEntries => List.unmodifiable(_stderrEntries);
+  List<String> get stderrLogLines =>
+      List.unmodifiable(_stderrEntries.map((e) => e.text));
   Stream<String> get onStderrLine => _stderrLinesController.stream;
 
   Stream<void> get onToolsChanged => _toolsChangedController.stream;
@@ -111,7 +113,8 @@ class McpClient {
     );
 
     _stderrSub = transport.stderrLines.listen((line) {
-      _stderrLogLines.add(line);
+      final entry = McpStderrEntry(text: line);
+      _stderrEntries.add(entry);
       _stderrLinesController.add(line);
     });
 
@@ -417,7 +420,7 @@ class McpClient {
   /// Clears server log stream history.
   void clearLogs() {
     _serverLogs.clear();
-    _stderrLogLines.clear();
+    _stderrEntries.clear();
   }
 
   // ==========================================

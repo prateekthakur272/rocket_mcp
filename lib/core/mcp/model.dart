@@ -599,6 +599,15 @@ class McpLogMessage {
   }
 }
 
+/// Standard error log entry from a running server process.
+class McpStderrEntry {
+  McpStderrEntry({required this.text, DateTime? timestamp})
+    : timestamp = timestamp ?? DateTime.now();
+
+  final String text;
+  final DateTime timestamp;
+}
+
 /// Direction of JSON-RPC protocol messages.
 enum McpMessageDirection { incoming, outgoing }
 

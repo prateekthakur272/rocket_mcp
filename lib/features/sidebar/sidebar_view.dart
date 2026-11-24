@@ -180,8 +180,9 @@ class _SidebarViewState extends State<SidebarView> {
                     SizedBox(
                       width: double.infinity,
                       child: Btn(
-                        label: 'Explore Presets',
-                        onClick: () => state.modal = const ModalImportExport(),
+                        label: 'Template Gallery',
+                        onClick: () =>
+                            state.modal = const ModalTemplateGallery(),
                         icon: Ic.presets,
                       ),
                     ),
@@ -270,9 +271,9 @@ class _SidebarViewState extends State<SidebarView> {
                 ),
                 Expanded(
                   child: _FooterBtn(
-                    label: 'Presets',
+                    label: 'Templates',
                     icon: Ic.presets,
-                    onClick: () => state.modal = const ModalImportExport(),
+                    onClick: () => state.modal = const ModalTemplateGallery(),
                   ),
                 ),
                 Expanded(

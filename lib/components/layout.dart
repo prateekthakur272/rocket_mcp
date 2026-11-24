@@ -251,10 +251,14 @@ class ModalScaffold extends StatelessWidget {
     this.actions = const [],
     this.width = 540,
     this.maxHeight,
+    this.bodyPadding = const EdgeInsets.all(16),
   });
 
   final String title;
   final Widget child;
+
+  /// Space around [child]; zero lets the body run edge to edge (for a side pane).
+  final EdgeInsets bodyPadding;
   final VoidCallback onClose;
   final List<Widget> actions;
   final double width;
@@ -340,10 +344,7 @@ class ModalScaffold extends StatelessWidget {
                         ),
                         ConstrainedBox(
                           constraints: BoxConstraints(maxHeight: maxBodyHeight),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: child,
-                          ),
+                          child: Padding(padding: bodyPadding, child: child),
                         ),
                         if (actions.isNotEmpty)
                           DrawTopBorder(

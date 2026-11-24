@@ -6,6 +6,7 @@ import 'package:rocket_mcp/features/dialogs/onboarding_dialog.dart';
 import 'package:rocket_mcp/features/preferences/preferences.dart';
 import 'package:rocket_mcp/features/servers/import_export_dialog.dart';
 import 'package:rocket_mcp/features/servers/server_dialog.dart';
+import 'package:rocket_mcp/features/templates/template_gallery_dialog.dart';
 import 'package:rocket_mcp/features/shell/about_dialog.dart';
 import 'package:rocket_mcp/features/shell/palette.dart';
 import 'package:rocket_mcp/features/shell/update_dialog.dart';
@@ -35,6 +36,7 @@ class Modals extends StatelessWidget {
       state: state,
       server: modal.server,
     ),
+    ModalTemplateGallery() => TemplateGalleryDialog(state: state),
     ModalImportExport() => ImportExportDialog(state: state),
     ModalOnboarding() => OnboardingDialog(state: state),
   };

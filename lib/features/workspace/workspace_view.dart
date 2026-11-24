@@ -50,11 +50,22 @@ class WorkspaceView extends StatelessWidget {
                 size: 12,
               ),
               const SizedBox(height: 4),
-              Btn(
-                label: 'Add Server',
-                icon: Ic.add,
-                primary: true,
-                onClick: () => state.modal = const ModalServerConfig(),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: 8,
+                children: [
+                  Btn(
+                    label: 'Add Server',
+                    icon: Ic.add,
+                    primary: true,
+                    onClick: () => state.modal = const ModalServerConfig(),
+                  ),
+                  Btn(
+                    label: 'Template Gallery',
+                    icon: Ic.presets,
+                    onClick: () => state.modal = const ModalTemplateGallery(),
+                  ),
+                ],
               ),
             ],
           ),
@@ -114,6 +125,6 @@ class WorkspaceView extends StatelessWidget {
         WorkspaceTab.prompts => PromptRunnerView(session: session),
         WorkspaceTab.inspector => TrafficInspectorView(session: session),
         WorkspaceTab.logs => ServerLogsView(session: session),
-        WorkspaceTab.raw => RawJsonRpcView(session: session),
+        WorkspaceTab.raw => RawJsonRpcView(session: session, state: state),
       };
 }

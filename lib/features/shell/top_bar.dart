@@ -155,9 +155,9 @@ class TopBar extends StatelessWidget {
               ] else
                 const Spacer(),
               _TopBtn(
-                label: 'Presets',
+                label: 'Templates',
                 icon: Ic.presets,
-                onClick: () => state.modal = const ModalImportExport(),
+                onClick: () => state.modal = const ModalTemplateGallery(),
               ),
               _TopBtn(
                 label: 'Import',

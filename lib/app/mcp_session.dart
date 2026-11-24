@@ -22,12 +22,17 @@ enum WorkspaceTab {
 
 /// Active session state for a single configured MCP server.
 class McpSession extends ChangeNotifier {
-  McpSession({required this.config, this.transportOverride});
+  McpSession({
+    required this.config,
+    this.transportOverride,
+    this.onToast,
+  });
 
   static const String _tag = 'mcp_session';
 
   McpServerConfig config;
   final McpTransport? transportOverride;
+  final void Function(String message)? onToast;
 
   McpServerStatus _status = McpServerStatus.disconnected;
   McpServerStatus get status => _status;
@@ -40,6 +45,9 @@ class McpSession extends ChangeNotifier {
 
   Duration? _pingLatency;
   Duration? get pingLatency => _pingLatency;
+
+  bool _isPinging = false;
+  bool get isPinging => _isPinging;
 
   WorkspaceTab _activeTab = WorkspaceTab.tools;
   WorkspaceTab get activeTab => _activeTab;
@@ -175,6 +183,23 @@ class McpSession extends ChangeNotifier {
 
   String? _lastRawResponse;
   String? get lastRawResponse => _lastRawResponse;
+
+  Duration? _lastRawDuration;
+  Duration? get lastRawDuration => _lastRawDuration;
+
+  bool _lastRawIsError = false;
+  bool get lastRawIsError => _lastRawIsError;
+
+  DateTime? _lastRawTimestamp;
+  DateTime? get lastRawTimestamp => _lastRawTimestamp;
+
+  void clearRawResponse() {
+    _lastRawResponse = null;
+    _lastRawDuration = null;
+    _lastRawIsError = false;
+    _lastRawTimestamp = null;
+    notifyListeners();
+  }
 
   bool _isRunningRaw = false;
   bool get isRunningRaw => _isRunningRaw;
@@ -354,15 +379,35 @@ class McpSession extends ChangeNotifier {
     }
   }
 
-  /// Pings the server and updates latency.
-  Future<void> ping() async {
+  /// Pings the server and updates latency. Shows toast feedback when [feedback] is true.
+  Future<Duration?> ping({bool feedback = false}) async {
     final c = _client;
-    if (c == null || !c.isConnected) return;
+    if (c == null || !c.isConnected) {
+      if (feedback) {
+        onToast?.call('Server "${config.name}" is not connected');
+      }
+      return null;
+    }
+
+    _isPinging = true;
+    notifyListeners();
+
     try {
-      _pingLatency = await c.ping();
-      notifyListeners();
+      final latency = await c.ping();
+      _pingLatency = latency;
+      if (feedback) {
+        onToast?.call('Ping "${config.name}": ${latency.inMilliseconds}ms');
+      }
+      return latency;
     } catch (e) {
       Log.warning(_tag, 'Ping failed: $e');
+      if (feedback) {
+        onToast?.call('Ping failed for "${config.name}": $e');
+      }
+      return null;
+    } finally {
+      _isPinging = false;
+      notifyListeners();
     }
   }
 
@@ -471,8 +516,12 @@ class McpSession extends ChangeNotifier {
     final c = _client;
     if (c == null || !c.isConnected || _isRunningRaw) return;
 
+    final stopwatch = Stopwatch()..start();
     _isRunningRaw = true;
     _lastRawResponse = null;
+    _lastRawDuration = null;
+    _lastRawIsError = false;
+    _lastRawTimestamp = null;
     notifyListeners();
 
     try {
@@ -486,8 +535,17 @@ class McpSession extends ChangeNotifier {
       }
 
       final res = await c.sendRequest(_rawMethod.trim(), params);
+      stopwatch.stop();
+      _lastRawDuration = stopwatch.elapsed;
+      _lastRawTimestamp = DateTime.now();
+      _lastRawIsError =
+          res.containsKey('error') || res['isError'] == true;
       _lastRawResponse = const JsonEncoder.withIndent('  ').convert(res);
     } catch (e) {
+      stopwatch.stop();
+      _lastRawDuration = stopwatch.elapsed;
+      _lastRawTimestamp = DateTime.now();
+      _lastRawIsError = true;
       _lastRawResponse = 'Error: $e';
     } finally {
       _isRunningRaw = false;
