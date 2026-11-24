@@ -6,6 +6,8 @@ import 'package:material_ui/material_ui.dart' show Material, MaterialApp;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rocket_mcp/app/app_state.dart';
 import 'package:rocket_mcp/app/modal.dart';
+import 'package:rocket_mcp/core/mcp/model.dart';
+import 'package:rocket_mcp/core/mcp/transports.dart';
 import 'package:rocket_mcp/core/model/app_settings.dart';
 import 'package:rocket_mcp/core/storage/app_store.dart';
 import 'package:rocket_mcp/features/shell/app.dart';
@@ -29,11 +31,23 @@ void main() {
 
   group('AppSettings', () {
     test('round-trips through json and ignores wrongly typed fields', () {
-      const saved = AppSettings(theme: ThemeMode.dark, fontSize: 15);
-      expect(AppSettings.fromJson(saved.toJson()), isA<AppSettings>());
-      final read = AppSettings.fromJson({'theme': 'dark', 'fontSize': 'big'});
+      const saved = AppSettings(
+        theme: ThemeMode.dark,
+        fontSize: 15,
+        autoConnect: true,
+      );
+      final json = saved.toJson();
+      expect(json['autoConnect'], isTrue);
+      final revived = AppSettings.fromJson(json);
+      expect(revived.autoConnect, isTrue);
+      final read = AppSettings.fromJson({
+        'theme': 'dark',
+        'fontSize': 'big',
+        'autoConnect': 'yes',
+      });
       expect(read.theme, ThemeMode.dark);
       expect(read.fontSize, AppSettings.defaultFontSize);
+      expect(read.autoConnect, isFalse);
     });
   });
 
@@ -71,6 +85,58 @@ void main() {
         ..splitFraction = 5;
       expect(state.listPaneWidth, AppState.maxListPaneWidth);
       expect(state.splitFraction, AppState.maxSplitFraction);
+    });
+
+    test('selected server is preserved on restart and auto-connects when enabled', () async {
+      const s1 = McpServerConfig(id: 's1', name: 'Server 1', command: 'echo');
+      const s2 = McpServerConfig(id: 's2', name: 'Server 2', command: 'echo');
+      final connected = <String>[];
+
+      McpTransport mockTransport(McpServerConfig s) => McpInMemoryTransport(
+        onRequest: (msg) {
+          if (msg['method'] == 'initialize') {
+            connected.add(s.id);
+            return {
+              'jsonrpc': '2.0',
+              'id': msg['id'],
+              'result': {
+                'protocolVersion': '2024-11-05',
+                'serverInfo': {'name': s.name, 'version': '1.0.0'},
+                'capabilities': {},
+              },
+            };
+          }
+          return {'jsonrpc': '2.0', 'id': msg['id'], 'result': {}};
+        },
+      );
+
+      // 1. Initial run: default active is s1, select s2
+      final app1 = AppState(
+        initialServers: [s1, s2],
+        transportFactory: mockTransport,
+      );
+      expect(app1.activeServerId, 's1');
+      app1.selectServer('s2');
+      expect(app1.activeServerId, 's2');
+      app1.updateSettings(app1.settings.copyWith(autoConnect: true));
+
+      // 2. Restart app: s2 should be restored as selected server and auto-connected
+      connected.clear();
+      final app2 = AppState(
+        initialServers: [s1, s2],
+        transportFactory: mockTransport,
+      );
+      expect(app2.activeServerId, 's2');
+      await pumpEventQueue();
+
+      // Only the selected server s2 should have been auto-connected, s1 remains disconnected
+      expect(connected, contains('s2'));
+      expect(connected, isNot(contains('s1')));
+      expect(app2.getSession('s2')?.status, McpServerStatus.connected);
+      expect(app2.getSession('s1')?.status, McpServerStatus.disconnected);
+
+      // Clean up settings
+      app2.updateSettings(app2.settings.copyWith(autoConnect: false));
     });
 
     test('palette toggles', () {

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart' show MaterialApp, Material;
 import 'package:rocket_mcp/app/app_state.dart';
 import 'package:rocket_mcp/app/mcp_session.dart';
+import 'package:rocket_mcp/core/storage/app_store.dart';
 import 'package:rocket_mcp/components/code_view.dart';
 import 'package:rocket_mcp/components/json_tree.dart';
 import 'package:rocket_mcp/core/mcp/model.dart';
@@ -17,9 +18,11 @@ void main() {
 
   setUp(() {
     home = Directory.systemTemp.createTempSync('rocketmcp-raw-jsonrpc-test');
+    AppStore.homeOverride = home.path;
   });
 
   tearDown(() {
+    AppStore.homeOverride = null;
     try {
       home.deleteSync(recursive: true);
     } catch (_) {}

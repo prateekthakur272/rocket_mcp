@@ -34,6 +34,7 @@ class SavedLayout {
     this.sidebarVisible = true,
     this.listPaneWidth = defaultListPaneWidth,
     this.splitFraction = defaultSplitFraction,
+    this.activeServerId,
   });
 
   static const double defaultListPaneWidth = 220;
@@ -47,6 +48,9 @@ class SavedLayout {
 
   /// The share of the workspace taken by the request pane (the rest is the response pane).
   final double splitFraction;
+
+  /// The ID of the server selected in the workspace.
+  final String? activeServerId;
 }
 
 /// Everything the app keeps on disk, all in one data folder (`~/.rocketmcp`): settings, layout, small flags, window
@@ -58,14 +62,23 @@ final class AppStore {
   static const String _tag = 'storage';
 
   /// Overrides the data folder; set before first use (tests).
-  static String? homeOverride;
+  static String? _homeOverride;
+  static String? get homeOverride => _homeOverride;
+  static set homeOverride(String? value) {
+    _homeOverride = value;
+    _resolvedDir = null;
+  }
 
   static String? _resolvedDir;
 
   static String get dir {
+    if (homeOverride != null) {
+      Directory(homeOverride!).createSync(recursive: true);
+      return homeOverride!;
+    }
     final cached = _resolvedDir;
-    if (cached != null && homeOverride == null) return cached;
-    final d = homeOverride ?? Paths.dataDir;
+    if (cached != null) return cached;
+    final d = Paths.dataDir;
     Directory(d).createSync(recursive: true);
     Log.writeTo(Paths.logFile(d));
     _resolvedDir = d;
@@ -99,6 +112,7 @@ final class AppStore {
     final visible = json['sidebarVisible'];
     final listWidth = json['listPaneWidth'];
     final split = json['splitFraction'];
+    final activeServer = json['activeServerId'];
     return SavedLayout(
       sidebarWidth: width is num ? width.toDouble() : 0.22,
       sidebarVisible: visible is bool ? visible : true,
@@ -108,6 +122,7 @@ final class AppStore {
       splitFraction: split is num
           ? split.toDouble()
           : SavedLayout.defaultSplitFraction,
+      activeServerId: activeServer is String ? activeServer : null,
     );
   }
 
@@ -116,6 +131,7 @@ final class AppStore {
     'sidebarVisible': layout.sidebarVisible,
     'listPaneWidth': layout.listPaneWidth,
     'splitFraction': layout.splitFraction,
+    if (layout.activeServerId != null) 'activeServerId': layout.activeServerId,
   });
 
   /// A small named value the app remembers that is neither a setting nor layout, for example the update version the

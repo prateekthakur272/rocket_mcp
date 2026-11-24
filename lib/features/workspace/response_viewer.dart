@@ -99,48 +99,98 @@ class _ResponseViewerState extends State<ResponseViewer> {
           ),
           child: Row(
             children: [
-              Ico(Ic.history, tint: p.muted, size: 14),
-              const SizedBox(width: 8),
-              const T(
-                'Response',
-                weight: FontWeight.w600,
-                size: 12,
-                maxLines: 1,
-              ),
-              if (toolResult != null) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: toolResult.isError
-                        ? p.err.withValues(alpha: 0.15)
-                        : p.ok.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: T(
-                    toolResult.isError ? 'ERROR' : 'SUCCESS',
-                    maxLines: 1,
-                    size: 10,
-                    mono: true,
-                    weight: FontWeight.w700,
-                    color: toolResult.isError ? p.err : p.ok,
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Ico(Ic.history, tint: p.muted, size: 14),
+                      const SizedBox(width: 8),
+                      const T(
+                        'Response',
+                        weight: FontWeight.w600,
+                        size: 12,
+                        maxLines: 1,
+                        softWrap: false,
+                      ),
+                      if (toolResult != null) ...[
+                        const SizedBox(width: 8),
+                        // Status pill (narrow pill like server header)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 2.5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: (toolResult.isError ? p.err : p.ok)
+                                .withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            spacing: 4,
+                            children: [
+                              Container(
+                                width: 5,
+                                height: 5,
+                                decoration: BoxDecoration(
+                                  color: toolResult.isError ? p.err : p.ok,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              T(
+                                toolResult.isError ? 'ERROR' : 'SUCCESS',
+                                maxLines: 1,
+                                softWrap: false,
+                                overflow: TextOverflow.ellipsis,
+                                size: 10,
+                                lineHeight: 1.2,
+                                mono: true,
+                                weight: FontWeight.w600,
+                                color: toolResult.isError ? p.err : p.ok,
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (session.lastToolDurationMs != null) ...[
+                          const SizedBox(width: 6),
+                          // Latency pill (narrow pill like server header)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 2.5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: p.muted.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              spacing: 4,
+                              children: [
+                                Ico(Ic.speed, size: 10, tint: p.muted),
+                                T(
+                                  '${session.lastToolDurationMs}ms',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  overflow: TextOverflow.ellipsis,
+                                  size: 10,
+                                  lineHeight: 1.2,
+                                  mono: true,
+                                  weight: FontWeight.w600,
+                                  color: p.muted,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ],
                   ),
                 ),
-                if (session.lastToolDurationMs != null) ...[
-                  const SizedBox(width: 8),
-                  T(
-                    '${session.lastToolDurationMs}ms',
-                    maxLines: 1,
-                    size: 11,
-                    mono: true,
-                    color: p.muted,
-                  ),
-                ],
-              ],
-              const Spacer(),
+              ),
+              const SizedBox(width: 8),
               if (toolResult != null) ...[
                 ViewModeMenu(
                   current: _viewMode,

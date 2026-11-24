@@ -448,58 +448,42 @@ class _RawJsonRpcViewState extends State<RawJsonRpcView> {
                               clearable: true,
                             ),
                           ),
-                          Btn(
-                            label: session.isRunningRaw ? 'Sending…' : 'Send',
-                            icon: session.isRunningRaw ? null : Ic.send,
-                            primary: true,
-                            enabled: canSend,
-                            onClick: session.sendRawJsonRpc,
-                          ),
-                          Container(
-                            height: CONTROL_H,
-                            padding: const EdgeInsets.symmetric(horizontal: 6),
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: p.border.withValues(alpha: 0.25),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: T(
-                              Platform.isMac ? '⌘↵' : 'Ctrl+↵',
-                              mono: true,
-                              size: 10,
-                              color: p.muted,
-                              maxLines: 1,
-                              softWrap: false,
-                              overflow: TextOverflow.ellipsis,
+                          Tooltip(
+                            message: Platform.isMac ? 'Send (⌘↵)' : 'Send (Ctrl+↵)',
+                            child: Btn(
+                              label: session.isRunningRaw ? 'Sending…' : 'Send',
+                              icon: session.isRunningRaw ? null : Ic.send,
+                              primary: true,
+                              enabled: canSend,
+                              onClick: session.sendRawJsonRpc,
                             ),
                           ),
                         ],
                       ),
 
-                      // Parameters Label & Validation pill
+                      // Parameters Label & Validation pill (aligned to the end)
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const Flexible(
-                            child: T(
-                              'PARAMETERS (JSON OBJECT)',
-                              size: 10.5,
-                              mono: true,
-                              weight: FontWeight.w600,
-                              maxLines: 1,
-                              softWrap: false,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                          const T(
+                            'PARAMETERS (JSON OBJECT)',
+                            size: 10.5,
+                            mono: true,
+                            weight: FontWeight.w600,
+                            maxLines: 1,
+                            softWrap: false,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          const Spacer(),
                           if (!hasParams)
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
+                                horizontal: 7,
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
                                 color: p.border.withValues(alpha: 0.25),
-                                borderRadius: BorderRadius.circular(4),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                               child: T(
                                 'Empty { }',
@@ -514,12 +498,12 @@ class _RawJsonRpcViewState extends State<RawJsonRpcView> {
                           else if (jsonProblem == null)
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
+                                horizontal: 7,
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
                                 color: p.ok.withValues(alpha: 0.14),
-                                borderRadius: BorderRadius.circular(4),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -544,12 +528,12 @@ class _RawJsonRpcViewState extends State<RawJsonRpcView> {
                               message: jsonProblem,
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
+                                  horizontal: 7,
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
                                   color: p.err.withValues(alpha: 0.14),
-                                  borderRadius: BorderRadius.circular(4),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -642,85 +626,113 @@ class _RawJsonRpcViewState extends State<RawJsonRpcView> {
             child: Row(
               children: [
                 Expanded(
-                  child: Row(
-                    children: [
-                      Ico(
-                        Ic.incoming,
-                        tint: hasResponse
-                            ? (session.lastRawIsError ? p.err : p.ok)
-                            : p.muted,
-                        size: 13,
-                      ),
-                      const SizedBox(width: 6),
-                      const Flexible(
-                        child: T(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Ico(
+                          Ic.incoming,
+                          tint: hasResponse
+                              ? (session.lastRawIsError ? p.err : p.ok)
+                              : p.muted,
+                          size: 13,
+                        ),
+                        const SizedBox(width: 6),
+                        const T(
                           'RESPONSE',
                           size: 11,
                           mono: true,
                           weight: FontWeight.w700,
                           maxLines: 1,
                           softWrap: false,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
                       if (hasResponse) ...[
                         const SizedBox(width: 8),
+                        // Status chip (narrow pill like server header)
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
+                            horizontal: 7,
+                            vertical: 2.5,
                           ),
                           decoration: BoxDecoration(
                             color: (session.lastRawIsError ? p.err : p.ok)
                                 .withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                          child: T(
-                            session.lastRawIsError ? 'ERROR' : 'SUCCESS',
-                            size: 9.5,
-                            mono: true,
-                            weight: FontWeight.w700,
-                            color: session.lastRawIsError ? p.err : p.ok,
-                            maxLines: 1,
-                            softWrap: false,
-                            overflow: TextOverflow.ellipsis,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            spacing: 4,
+                            children: [
+                              Container(
+                                width: 5,
+                                height: 5,
+                                decoration: BoxDecoration(
+                                  color: session.lastRawIsError ? p.err : p.ok,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              T(
+                                session.lastRawIsError ? 'ERROR' : 'SUCCESS',
+                                size: 10,
+                                lineHeight: 1.2,
+                                mono: true,
+                                weight: FontWeight.w600,
+                                color: session.lastRawIsError ? p.err : p.ok,
+                                maxLines: 1,
+                                softWrap: false,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ),
                         ),
                         if (session.lastRawDuration != null) ...[
                           const SizedBox(width: 6),
+                          // Latency chip (narrow pill like server header)
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 5,
-                              vertical: 2,
+                              horizontal: 7,
+                              vertical: 2.5,
                             ),
                             decoration: BoxDecoration(
-                              color: p.border.withValues(alpha: 0.3),
-                              borderRadius: BorderRadius.circular(4),
+                              color: p.muted.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            child: T(
-                              '⚡ ${session.lastRawDuration!.inMilliseconds}ms',
-                              size: 9.5,
-                              mono: true,
-                              color: p.muted,
-                              maxLines: 1,
-                              softWrap: false,
-                              overflow: TextOverflow.ellipsis,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              spacing: 4,
+                              children: [
+                                Ico(Ic.speed, size: 10, tint: p.muted),
+                                T(
+                                  '${session.lastRawDuration!.inMilliseconds}ms',
+                                  size: 10,
+                                  lineHeight: 1.2,
+                                  mono: true,
+                                  weight: FontWeight.w600,
+                                  color: p.muted,
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
                           ),
                         ],
                         const SizedBox(width: 6),
+                        // Size chip (narrow pill)
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 5,
-                            vertical: 2,
+                            horizontal: 6,
+                            vertical: 2.5,
                           ),
                           decoration: BoxDecoration(
-                            color: p.border.withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(4),
+                            color: p.muted.withValues(alpha: 0.10),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: T(
                             _formatSize(session.lastRawResponse!.length),
                             size: 9.5,
+                            lineHeight: 1.2,
                             mono: true,
                             color: p.muted,
                             maxLines: 1,
@@ -730,10 +742,19 @@ class _RawJsonRpcViewState extends State<RawJsonRpcView> {
                         ),
                         if (session.lastRawTimestamp != null) ...[
                           const SizedBox(width: 6),
-                          Flexible(
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2.5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: p.muted.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                             child: T(
                               _formatTime(session.lastRawTimestamp!),
                               size: 9.5,
+                              lineHeight: 1.2,
                               mono: true,
                               color: p.muted,
                               maxLines: 1,
@@ -746,6 +767,7 @@ class _RawJsonRpcViewState extends State<RawJsonRpcView> {
                     ],
                   ),
                 ),
+              ),
                 const SizedBox(width: 8),
                 ViewModeMenu(
                   current: _viewMode,

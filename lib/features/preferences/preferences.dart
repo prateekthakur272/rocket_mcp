@@ -459,6 +459,16 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
       ),
       _Pref(
         _Section.Connections,
+        'Auto-connect servers',
+        Toggle(
+          on: s.autoConnect,
+          onChange: (v) => set(s.copyWith(autoConnect: v)),
+        ),
+        icon: Icons.power_rounded,
+        desc: 'Automatically connects the selected server on startup and when switched.',
+      ),
+      _Pref(
+        _Section.Connections,
         'Timeout',
         _NumberField(
           value: s.timeoutMs,

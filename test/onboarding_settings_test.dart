@@ -154,6 +154,7 @@ void main() {
         // Switch to Connections
         await tester.tap(find.text('Connections').first);
         await tester.pumpAndSettle();
+        expect(find.text('Auto-connect servers'), findsOneWidget);
         expect(find.text('Timeout'), findsOneWidget);
         expect(find.text('User-Agent'), findsOneWidget);
 

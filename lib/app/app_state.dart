@@ -33,7 +33,20 @@ class AppState extends ChangeNotifier {
       _initSession(s);
     }
     if (_servers.isNotEmpty) {
-      _activeServerId = _servers.first.id;
+      final savedId = layout.activeServerId;
+      if (savedId != null && _servers.any((s) => s.id == savedId)) {
+        _activeServerId = savedId;
+      } else {
+        _activeServerId = _servers.first.id;
+      }
+    }
+
+    // Only auto-connect the selected server on launch if autoConnect is enabled
+    if (settings.autoConnect && _activeServerId != null) {
+      final session = _sessions[_activeServerId];
+      if (session != null && session.status == McpServerStatus.disconnected) {
+        session.connect();
+      }
     }
 
     // Launch initial onboarding tour on first run
@@ -182,6 +195,13 @@ class AppState extends ChangeNotifier {
   void selectServer(String id) {
     if (_activeServerId != id && _sessions.containsKey(id)) {
       _activeServerId = id;
+      persist();
+      if (settings.autoConnect) {
+        final session = _sessions[id];
+        if (session != null && session.status == McpServerStatus.disconnected) {
+          session.connect();
+        }
+      }
       notifyListeners();
     }
   }
@@ -190,7 +210,11 @@ class AppState extends ChangeNotifier {
     _servers.add(server);
     _initSession(server);
     _activeServerId = server.id;
+    persist();
     ServerStore.saveServers(_servers);
+    if (settings.autoConnect) {
+      _sessions[server.id]?.connect();
+    }
     notifyListeners();
   }
 
@@ -215,6 +239,7 @@ class AppState extends ChangeNotifier {
     if (_activeServerId == id) {
       _activeServerId = _servers.isNotEmpty ? _servers.first.id : null;
     }
+    persist();
     notifyListeners();
   }
 
@@ -242,8 +267,14 @@ class AppState extends ChangeNotifier {
 
   void updateSettings(AppSettings next) {
     if (next == settings) return;
+    final prevAutoConnect = settings.autoConnect;
     settings = next;
     AppStore.saveSettings(next);
+    if (!prevAutoConnect && next.autoConnect) {
+      if (activeSession?.status == McpServerStatus.disconnected) {
+        activeSession?.connect();
+      }
+    }
     notifyListeners();
   }
 
@@ -266,6 +297,7 @@ class AppState extends ChangeNotifier {
     sidebarVisible,
     listPaneWidth,
     splitFraction,
+    _activeServerId,
   ];
 
   void persist() => AppStore.saveLayout(
@@ -274,6 +306,7 @@ class AppState extends ChangeNotifier {
       sidebarVisible: sidebarVisible,
       listPaneWidth: listPaneWidth,
       splitFraction: splitFraction,
+      activeServerId: _activeServerId,
     ),
   );
 

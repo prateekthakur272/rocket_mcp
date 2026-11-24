@@ -38,6 +38,7 @@ class AppSettings {
     this.verticalLayout = true,
     this.fontSize = defaultFontSize,
     this.autoSave = false,
+    this.autoConnect = false,
   });
 
   static const int defaultFontSize = 13;
@@ -58,6 +59,7 @@ class AppSettings {
   final bool verticalLayout;
   final int fontSize;
   final bool autoSave;
+  final bool autoConnect;
 
   /// `Rocket MCP/1.0.0`: the app name and the version read at startup.
   static String get defaultUserAgent =>
@@ -77,6 +79,7 @@ class AppSettings {
     bool? verticalLayout,
     int? fontSize,
     bool? autoSave,
+    bool? autoConnect,
   }) => AppSettings(
     theme: theme ?? this.theme,
     timeoutMs: timeoutMs ?? this.timeoutMs,
@@ -88,6 +91,7 @@ class AppSettings {
     verticalLayout: verticalLayout ?? this.verticalLayout,
     fontSize: fontSize ?? this.fontSize,
     autoSave: autoSave ?? this.autoSave,
+    autoConnect: autoConnect ?? this.autoConnect,
   );
 
   Map<String, Object?> toJson() => {
@@ -101,6 +105,7 @@ class AppSettings {
     'verticalLayout': verticalLayout,
     'fontSize': fontSize,
     'autoSave': autoSave,
+    'autoConnect': autoConnect,
   };
 
   /// Reads settings written by [toJson]; a missing or wrongly typed field keeps its default.
@@ -123,6 +128,7 @@ class AppSettings {
         maxFontSize,
       ),
       autoSave: flag('autoSave') ?? d.autoSave,
+      autoConnect: flag('autoConnect') ?? d.autoConnect,
     );
   }
 }
